@@ -374,4 +374,3 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/POS.Api/obj/Debug/net6.0/POS.Api.csproj.AssemblyReference.cache
