@@ -343,11 +343,12 @@ namespace POS.Services
                 {
                     if (CheckedValidation(objProduct, responseMessage))
                     {
-                        string showUrl = (!string.IsNullOrEmpty(objProduct.Image) && (objProduct.Image != CommonConstant.NoImage)) ? (showFilePath + objProduct.Image) : String.Empty;
+
+                        //string showUrl = (!string.IsNullOrEmpty(objProduct.Image) && (objProduct.Image != CommonConstant.NoImage)) ? (showFilePath + objProduct.Image) : String.Empty;
                         if (!string.IsNullOrEmpty(objProduct.Attachment?.Content))
                         {
                             //remove image from directory
-                            string fileRemovePath = showUrl.Replace(showFilePath, saveFilePath);
+                            string fileRemovePath = objProduct.Image.Replace(showFilePath, saveFilePath);
 
                             if (!string.IsNullOrEmpty(fileRemovePath))
                             {
@@ -355,7 +356,6 @@ namespace POS.Services
                                 if (File.Exists(fileRemovePath))
                                 {
                                     File.Delete(fileRemovePath);
-                                    showUrl = String.Empty;
                                 }
                             }
 
@@ -368,15 +368,14 @@ namespace POS.Services
                             string filePath = saveFilePath + fileName;
                             System.IO.File.WriteAllBytes(filePath, Convert.FromBase64String(base64image[1]));
 
-                            showUrl = filePath.Replace(saveFilePath, showFilePath);
+                            //showUrl = filePath.Replace(saveFilePath, showFilePath);
 
                             objProduct.Image = fileName;
                         }
                         else
                         {
-                            objProduct.Image = CommonConstant.NoImage;
+                            objProduct.Image = !string.IsNullOrEmpty(objProduct.Image) ? objProduct.Image.Replace(showFilePath, "") : CommonConstant.NoImage;
                         }
-
 
                         if (!string.IsNullOrEmpty(objProduct.SKU))
                         {
