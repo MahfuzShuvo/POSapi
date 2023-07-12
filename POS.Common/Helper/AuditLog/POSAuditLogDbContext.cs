@@ -17,6 +17,12 @@ namespace POS.Common.Helper.AuditLog
         {
 
         }
+
+        public POSAuditLogDbContext(DbContextOptions<POSAuditLogDbContext> options) : base(options)
+        {
+
+        }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             string conn = DBConnection.Configuration.GetConnectionString("POSAuditLog");
