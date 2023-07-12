@@ -5,6 +5,7 @@ using POS.Services.Interface;
 using POS.Services.Services;
 using POS.Services;
 using POS.API.Auth;
+using POS.Common.Helper.AuditLog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -68,6 +69,11 @@ builder.Services.AddDbContext<POSDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("CN"));
 });
+builder.Services.AddDbContext<POSAuditLogDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("AuditLogCN"));
+});
+
 
 /*-------------HttpContext access permission----*/
 builder.Services.AddHttpContextAccessor();
@@ -97,6 +103,7 @@ builder.Services.AddScoped<IUnitService, UnitService>();
 
 
 /*-------------Service register area-------END-----*/
+
 
 var app = builder.Build();
 

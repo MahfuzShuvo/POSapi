@@ -188,9 +188,9 @@ namespace POS.Services
                     if (CheckedValidation(objBrand, responseMessage))
                     {
 
-                        string showUrl = !string.IsNullOrEmpty(objBrand.Logo) ? (showFilePath + objBrand.Logo) : String.Empty;
                         if (!string.IsNullOrEmpty(objBrand.LogoAttachment?.Content))
                         {
+                        string showUrl = !string.IsNullOrEmpty(objBrand.Logo) ? (showFilePath + objBrand.Logo) : String.Empty;
                             //remove image from directory
                             string fileRemovePath = showUrl.Replace(showFilePath, saveFilePath);
 
@@ -216,6 +216,10 @@ namespace POS.Services
                             showUrl = filePath.Replace(saveFilePath, showFilePath);
 
                             objBrand.Logo = fileName;
+                        }
+                        else
+                        {
+                            objBrand.Logo = !string.IsNullOrEmpty(objBrand.Logo) ? objBrand.Logo : CommonConstant.NoImage;
                         }
 
                         if (objBrand.BrandID > 0)
