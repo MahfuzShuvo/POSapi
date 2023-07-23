@@ -13,16 +13,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using POS.Common.VM;
+using Microsoft.Extensions.Configuration;
 
 namespace POS.Services
 {
     public class PurchaseService: IPurchaseService
     {
         private readonly POSDbContext _posDbContext;
+        private readonly IConfiguration _configuration;
 
-        public PurchaseService(POSDbContext ctx)
+        public PurchaseService(POSDbContext ctx, IConfiguration configuration)
         {
             _posDbContext = ctx;
+            _configuration = configuration; 
         }
 
         /// <summary>
@@ -41,6 +44,28 @@ namespace POS.Services
 
                 lstPurchase = await _posDbContext.VMPurchase.OrderBy(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 responseMessage.TotalCount = lstPurchase.Count;
+
+
+                foreach (VMPurchase purchase in lstPurchase)
+                {
+                    if (!string.IsNullOrEmpty(purchase.ProductSKUs))
+                    {
+                        purchase.lstProduct = _posDbContext.VMProduct.Where(x => purchase.ProductSKUs.Contains(x.SKU)).ToList();
+
+                        if (purchase.lstProduct.Count > 0)
+                        {
+                            foreach (VMProduct product in purchase.lstProduct)
+                            {
+                                if (!string.IsNullOrEmpty(product.Image))
+                                {
+                                    string getshowurl = _configuration.GetSection("attachments").GetSection("showfilepath").Value;
+                                    product.Image = getshowurl + product.Image;
+                                }
+                            }
+                        }
+                    }
+
+                }
 
 
                 responseMessage.ResponseObj = lstPurchase;

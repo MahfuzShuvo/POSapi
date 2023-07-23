@@ -23,7 +23,7 @@ namespace POS.Common.Models
         public int? PaymentType { get; set; }
         public double? PaymentAmount { get; set; }
         public double? DueAmount { get; set; }
-        public string PaymentNote { get; set; }
+        public string? PaymentNote { get; set; }
         [NotMapped]
         public List<VMProduct> lstProduct { get; set; } = new List<VMProduct>();
     }
