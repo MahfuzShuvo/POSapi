@@ -127,9 +127,47 @@ namespace POS.Services
             try
             {
                 Purchase objPurchase = new Purchase();
+                List<PurchaseProductMapping> lstPurchaseProductMapping = new List<PurchaseProductMapping>();
+                List<Product> lstProduct = new List<Product>();
+
                 string purchaseCode = requestMessage?.RequestObj.ToString();
 
                 objPurchase = await _posDbContext.Purchase.AsNoTracking().FirstOrDefaultAsync(x => x.PurchaseCode == purchaseCode);
+
+                if (objPurchase != null)
+                {
+                    lstPurchaseProductMapping = await _posDbContext.PurchaseProductMapping.Where(x => x.PurchaseID == objPurchase.PurchaseID).ToListAsync();
+                    if (lstPurchaseProductMapping.Count > 0)
+                    {
+                        //List<int> lstProductIds = lstPurchaseProductMapping.Select(x => x.ProductID).ToList();
+
+                        lstProduct = await _posDbContext.Product.Where(p => 
+                                    lstPurchaseProductMapping.Select(ppm => ppm.ProductID).Contains(p.ProductID)).ToListAsync();
+                        if (lstProduct.Count > 0)
+                        {
+                            foreach (Product objProduct in lstProduct)
+                            {
+                                VMProduct product = new VMProduct();
+                                product = JsonConvert.DeserializeObject<VMProduct>(JsonConvert.SerializeObject(objProduct));
+                                if (product != null)
+                                {
+                                    product.Qty = lstPurchaseProductMapping.Where(x => x.ProductID == objProduct.ProductID).FirstOrDefault().Qty;
+                                    objPurchase.lstProduct.Add(product);
+                                }
+                                
+                            }
+                        }
+                    }
+
+                }
+                else
+                {
+                    responseMessage.Message = "Purchase not found";
+                    responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                    return responseMessage;
+                }
+
+
                 responseMessage.ResponseObj = objPurchase;
                 responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
 
@@ -241,10 +279,11 @@ namespace POS.Services
                     {
                         if (objPurchase.PurchaseID > 0)
                         {
-                            Purchase existingPurchase = await this._posDbContext.Purchase.AsNoTracking().FirstOrDefaultAsync(x => x.PurchaseID == objPurchase.PurchaseID);
+                            Purchase existingPurchase = await _posDbContext.Purchase.AsNoTracking().FirstOrDefaultAsync(x => x.PurchaseID == objPurchase.PurchaseID);
                             if (existingPurchase != null)
                             {
                                 actionType = (int)Enums.ActionType.Update;
+                                objPurchase.DueAmount = objPurchase.TotalPurchasePrice - objPurchase.PaymentAmount;
                                 objPurchase.CreatedDate = existingPurchase.CreatedDate;
                                 objPurchase.CreatedBy = existingPurchase.CreatedBy;
                                 objPurchase.UpdatedDate = DateTime.Now;
@@ -254,7 +293,7 @@ namespace POS.Services
                                 List<PurchaseProductMapping> existProduct = await _posDbContext.PurchaseProductMapping.AsNoTracking().Where(x => x.PurchaseID == objPurchase.PurchaseID).ToListAsync();
                                 if (existProduct.Count > 0)
                                 {
-                                    _posDbContext.PurchaseProductMapping.RemoveRange((IEnumerable<PurchaseProductMapping>)existingPurchase);
+                                    _posDbContext.PurchaseProductMapping.RemoveRange(existProduct);
                                 }
 
 
@@ -267,6 +306,8 @@ namespace POS.Services
                             // Generate a random number using the timestamp as a seed
                             //var randomNumber = new Random(timestamp.GetHashCode()).Next();
                             objPurchase.PurchaseCode = timestamp.ToString();
+
+                            objPurchase.DueAmount = objPurchase.TotalPurchasePrice - objPurchase.PaymentAmount;
                             
                             objPurchase.CreatedDate = DateTime.Now;
                             objPurchase.CreatedBy = requestMessage.UserID;
