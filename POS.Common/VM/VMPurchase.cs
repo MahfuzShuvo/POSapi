@@ -12,7 +12,7 @@ namespace POS.Common.VM
     {
         public string PurchaseCode { get; set; }
         public DateTime? PurchaseDate { get; set; }
-        public string? ProductSKUs { get; set; }
+        //public string? ProductSKUs { get; set; }
         public double? SubTotal { get; set; }
         public double? TotalPurchasePrice { get; set; }
         public double? OtherCharge { get; set; }

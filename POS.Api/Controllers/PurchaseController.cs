@@ -28,11 +28,17 @@ namespace POS.API.Controllers
         {
             return await _purchaseService.GetPurchaseById(requestMessage);
         }
-        
+
         [HttpPost("GetPurchaseByPurchaseCode")]
         public async Task<ResponseMessage> GetPurchaseByPurchaseCode(RequestMessage requestMessage)
         {
             return await _purchaseService.GetPurchaseByPurchaseCode(requestMessage);
+        }
+
+        [HttpPost("GetPurchaseByPurchaseCodeForView")]
+        public async Task<ResponseMessage> GetPurchaseByPurchaseCodeForView(RequestMessage requestMessage)
+        {
+            return await _purchaseService.GetPurchaseByPurchaseCodeForView(requestMessage);
         }
 
         [HttpPost("SavePurchase")]

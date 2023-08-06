@@ -48,21 +48,38 @@ namespace POS.Services
 
                 foreach (VMPurchase purchase in lstPurchase)
                 {
-                    if (!string.IsNullOrEmpty(purchase.ProductSKUs))
+                    Purchase objPurchase = _posDbContext.Purchase.AsNoTracking().Where(x => x.PurchaseCode == purchase.PurchaseCode).FirstOrDefault();
+                    if (objPurchase != null)
                     {
-                        purchase.lstProduct = _posDbContext.VMProduct.Where(x => purchase.ProductSKUs.Contains(x.SKU)).ToList();
-
-                        if (purchase.lstProduct.Count > 0)
+                        List<PurchaseProductMapping> lstPurchaseProductMapping = await _posDbContext.PurchaseProductMapping.Where(x => x.PurchaseID == objPurchase.PurchaseID).ToListAsync();
+                        if (lstPurchaseProductMapping.Count > 0)
                         {
-                            foreach (VMProduct product in purchase.lstProduct)
+                            List<Product> lstProduct = new List<Product>();
+
+                            lstProduct = await _posDbContext.Product.Where(p =>
+                                        lstPurchaseProductMapping.Select(ppm => ppm.ProductID).Contains(p.ProductID)).ToListAsync();
+                            if (lstProduct.Count > 0)
                             {
-                                if (!string.IsNullOrEmpty(product.Image))
+                                foreach (Product objProduct in lstProduct)
                                 {
-                                    string getshowurl = _configuration.GetSection("attachments").GetSection("showfilepath").Value;
-                                    product.Image = getshowurl + product.Image;
+                                    VMProduct product = new VMProduct();
+                                    product = JsonConvert.DeserializeObject<VMProduct>(JsonConvert.SerializeObject(objProduct));
+                                    
+
+                                    if (product != null)
+                                    {
+                                        if (!string.IsNullOrEmpty(product.Image))
+                                        {
+                                            string getshowurl = _configuration.GetSection("attachments").GetSection("showfilepath").Value;
+                                            product.Image = getshowurl + product.Image;
+                                        }
+                                        purchase.lstProduct.Add(product);
+                                    }
+
                                 }
                             }
                         }
+
                     }
 
                 }
@@ -85,7 +102,7 @@ namespace POS.Services
         }
 
         /// <summary>
-        /// 
+        /// Get puchase by purchase ID
         /// </summary>
         /// <param name="requestMessage"></param>
         /// <returns></returns>
@@ -116,7 +133,7 @@ namespace POS.Services
         }
 
         /// <summary>
-        /// 
+        /// Get purchase by purchase code
         /// </summary>
         /// <param name="requestMessage"></param>
         /// <returns></returns>
@@ -186,7 +203,78 @@ namespace POS.Services
 
 
         /// <summary>
-        /// 
+        /// Get purchase by purchase code for view the purchase
+        /// </summary>
+        /// <param name="requestMessage"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<ResponseMessage> GetPurchaseByPurchaseCodeForView(RequestMessage requestMessage)
+        {
+            ResponseMessage responseMessage = new ResponseMessage();
+            try
+            {
+                VMPurchase objPurchase = new VMPurchase();
+                List<PurchaseProductMapping> lstPurchaseProductMapping = new List<PurchaseProductMapping>();
+                List<Product> lstProduct = new List<Product>();
+
+                string purchaseCode = requestMessage?.RequestObj.ToString();
+
+                objPurchase = await _posDbContext.VMPurchase.AsNoTracking().FirstOrDefaultAsync(x => x.PurchaseCode == purchaseCode);
+                Purchase objPurchaseWithID = await _posDbContext.Purchase.AsNoTracking().FirstOrDefaultAsync(x => x.PurchaseCode == purchaseCode);
+
+                if (objPurchase != null && objPurchaseWithID != null)
+                {
+                    lstPurchaseProductMapping = await _posDbContext.PurchaseProductMapping.Where(x => x.PurchaseID == objPurchaseWithID.PurchaseID).ToListAsync();
+                    if (lstPurchaseProductMapping.Count > 0)
+                    {
+                        //List<int> lstProductIds = lstPurchaseProductMapping.Select(x => x.ProductID).ToList();
+
+                        lstProduct = await _posDbContext.Product.Where(p => 
+                                    lstPurchaseProductMapping.Select(ppm => ppm.ProductID).Contains(p.ProductID)).ToListAsync();
+                        if (lstProduct.Count > 0)
+                        {
+                            foreach (Product objProduct in lstProduct)
+                            {
+                                VMProduct product = new VMProduct();
+                                product = JsonConvert.DeserializeObject<VMProduct>(JsonConvert.SerializeObject(objProduct));
+                                if (product != null)
+                                {
+                                    product.Qty = lstPurchaseProductMapping.Where(x => x.ProductID == objProduct.ProductID).FirstOrDefault().Qty;
+                                    objPurchase.lstProduct.Add(product);
+                                }
+                                
+                            }
+                        }
+                    }
+
+                }
+                else
+                {
+                    responseMessage.Message = "Purchase not found";
+                    responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                    return responseMessage;
+                }
+
+
+                responseMessage.ResponseObj = objPurchase;
+                responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
+
+                //Log write
+                LogHelper.WriteLog(requestMessage?.RequestObj, (int)Enums.ActionType.View, requestMessage.UserID, "GetPurchaseByPurchaseCodeForView");
+            }
+            catch (Exception ex)
+            {
+                //Process excetion, Development mode show real exception and production mode will show custom exception.
+                responseMessage.Message = ExceptionHelper.ProcessException(ex, (int)Enums.ActionType.View, requestMessage.UserID, JsonConvert.SerializeObject(requestMessage.RequestObj), "GetPurchaseById");
+                responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+            }
+
+            return responseMessage;
+        }
+
+
+        /// <summary>
+        /// Delete purchase
         /// </summary>
         /// <param name="requestMessage"></param>
         /// <returns></returns>

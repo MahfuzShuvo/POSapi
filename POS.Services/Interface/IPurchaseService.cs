@@ -16,6 +16,7 @@ namespace POS.Services.Interface
         Task<ResponseMessage> SavePurchase(RequestMessage requestMessage);
         Task<ResponseMessage> GetPurchaseById(RequestMessage requestMessage);
         Task<ResponseMessage> GetPurchaseByPurchaseCode(RequestMessage requestMessage);
+        Task<ResponseMessage> GetPurchaseByPurchaseCodeForView(RequestMessage requestMessage);
         Task<ResponseMessage> DeletePurchase(RequestMessage requestMessage);
 
     }
