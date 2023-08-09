@@ -224,6 +224,8 @@ namespace POS.Services
 
                 if (objPurchase != null && objPurchaseWithID != null)
                 {
+                    objPurchase.objSupplier = await _posDbContext.Supplier.Where(x => x.SupplierID == objPurchaseWithID.SupplierID).FirstOrDefaultAsync();
+
                     lstPurchaseProductMapping = await _posDbContext.PurchaseProductMapping.Where(x => x.PurchaseID == objPurchaseWithID.PurchaseID).ToListAsync();
                     if (lstPurchaseProductMapping.Count > 0)
                     {
