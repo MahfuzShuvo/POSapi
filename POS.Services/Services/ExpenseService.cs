@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using POS.Common.VM;
 
 namespace POS.Services
 {
@@ -159,9 +160,26 @@ namespace POS.Services
                 {
                     if (CheckedValidation(objExpense, responseMessage))
                     {
+                        VMGetAccountBalanceExpense existAccount = await _posDbContext.VMGetAccountBalanceExpense.AsNoTracking().Where(x => x.AccountID == objExpense.AccountID).FirstOrDefaultAsync();
+                        if (existAccount != null)
+                        {
+                            if (existAccount.CurrentBalance <= objExpense.Amount)
+                            {
+                                responseMessage.ResponseCode = (int)Enums.ResponseCode.Warning;
+                                responseMessage.Message = "Insufficient balance! Please refill first.";
+                                return responseMessage;
+                            }
+                        }
+                        else
+                        {
+                            responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                            responseMessage.Message = "Account not found";
+                            return responseMessage;
+                        }
+
                         if (objExpense.ExpenseID > 0)
                         {
-                            Expense existingExpense = await this._posDbContext.Expense.AsNoTracking().FirstOrDefaultAsync(x => x.ExpenseID == objExpense.ExpenseID);
+                            Expense existingExpense = await _posDbContext.Expense.AsNoTracking().FirstOrDefaultAsync(x => x.ExpenseID == objExpense.ExpenseID);
                             if (existingExpense != null)
                             {
                                 actionType = (int)Enums.ActionType.Update;

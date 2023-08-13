@@ -17,7 +17,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace POS.Services
 {
-    public class PurchaseService: IPurchaseService
+    public class PurchaseService : IPurchaseService
     {
         private readonly POSDbContext _posDbContext;
         private readonly IConfiguration _configuration;
@@ -25,7 +25,7 @@ namespace POS.Services
         public PurchaseService(POSDbContext ctx, IConfiguration configuration)
         {
             _posDbContext = ctx;
-            _configuration = configuration; 
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace POS.Services
                                 {
                                     VMProduct product = new VMProduct();
                                     product = JsonConvert.DeserializeObject<VMProduct>(JsonConvert.SerializeObject(objProduct));
-                                    
+
 
                                     if (product != null)
                                     {
@@ -158,7 +158,7 @@ namespace POS.Services
                     {
                         //List<int> lstProductIds = lstPurchaseProductMapping.Select(x => x.ProductID).ToList();
 
-                        lstProduct = await _posDbContext.Product.Where(p => 
+                        lstProduct = await _posDbContext.Product.Where(p =>
                                     lstPurchaseProductMapping.Select(ppm => ppm.ProductID).Contains(p.ProductID)).ToListAsync();
                         if (lstProduct.Count > 0)
                         {
@@ -171,7 +171,7 @@ namespace POS.Services
                                     product.Qty = lstPurchaseProductMapping.Where(x => x.ProductID == objProduct.ProductID).FirstOrDefault().Qty;
                                     objPurchase.lstProduct.Add(product);
                                 }
-                                
+
                             }
                         }
                     }
@@ -231,7 +231,7 @@ namespace POS.Services
                     {
                         //List<int> lstProductIds = lstPurchaseProductMapping.Select(x => x.ProductID).ToList();
 
-                        lstProduct = await _posDbContext.Product.Where(p => 
+                        lstProduct = await _posDbContext.Product.Where(p =>
                                     lstPurchaseProductMapping.Select(ppm => ppm.ProductID).Contains(p.ProductID)).ToListAsync();
                         if (lstProduct.Count > 0)
                         {
@@ -244,7 +244,7 @@ namespace POS.Services
                                     product.Qty = lstPurchaseProductMapping.Where(x => x.ProductID == objProduct.ProductID).FirstOrDefault().Qty;
                                     objPurchase.lstProduct.Add(product);
                                 }
-                                
+
                             }
                         }
                     }
@@ -289,7 +289,7 @@ namespace POS.Services
                 VMPurchase objPurchase = JsonConvert.DeserializeObject<VMPurchase>(requestMessage?.RequestObj.ToString());
 
                 Purchase existingPurchase = await _posDbContext.Purchase.AsNoTracking().FirstOrDefaultAsync(x => x.PurchaseCode == objPurchase.PurchaseCode);
-               
+
                 if (existingPurchase.PurchaseID > 0)
                 {
                     List<PurchaseProductMapping> lstPurchaseProductMapping = await _posDbContext.PurchaseProductMapping.AsNoTracking().Where(x => x.PurchaseID == existingPurchase.PurchaseID).ToListAsync();
@@ -367,6 +367,23 @@ namespace POS.Services
                 {
                     if (CheckedValidation(objPurchase, responseMessage))
                     {
+                        VMGetAccountBalanceExpense existAccount = await _posDbContext.VMGetAccountBalanceExpense.AsNoTracking().Where(x => x.AccountID == objPurchase.PaymentType).FirstOrDefaultAsync();
+                        if (existAccount != null)
+                        {
+                            if (existAccount.CurrentBalance <= objPurchase.PaymentAmount)
+                            {
+                                responseMessage.ResponseCode = (int)Enums.ResponseCode.Warning;
+                                responseMessage.Message = "Insufficient balance! Please refill first or pay less than " + existAccount.CurrentBalance + " TK.";
+                                return responseMessage;
+                            }
+                        }
+                        else
+                        {
+                            responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                            responseMessage.Message = "Account not found";
+                            return responseMessage;
+                        }
+
                         if (objPurchase.PurchaseID > 0)
                         {
                             Purchase existingPurchase = await _posDbContext.Purchase.AsNoTracking().FirstOrDefaultAsync(x => x.PurchaseID == objPurchase.PurchaseID);
@@ -398,7 +415,7 @@ namespace POS.Services
                             objPurchase.PurchaseCode = timestamp.ToString();
 
                             objPurchase.DueAmount = objPurchase.TotalPurchasePrice - objPurchase.PaymentAmount;
-                            
+
                             objPurchase.CreatedDate = DateTime.Now;
                             objPurchase.CreatedBy = requestMessage.UserID;
                             await _posDbContext.Purchase.AddAsync(objPurchase);
@@ -538,7 +555,7 @@ namespace POS.Services
                 responseMessage.Message = "Purchase code is already exist";
                 return false;
             }
-            
+
             return true;
         }
     }
