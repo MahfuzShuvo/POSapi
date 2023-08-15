@@ -10,6 +10,7 @@ namespace POS.Common.Models
     {
         public int AccountStatementID { get; set; }
         public int AccountID { get; set; } = 0;
+        public int SalesID { get; set; } = 0;
         public int ExpenseID { get; set; } = 0;
         public double InBalance { get; set; } = 0;
         public double OutBalance { get; set; } = 0;

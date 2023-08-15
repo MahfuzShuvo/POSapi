@@ -1,4 +1,4 @@
-﻿using POS.Common.VM;
+﻿using POS.Common.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -6,24 +6,25 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace POS.Common.Models
+namespace POS.Common.VM
 {
-    public class Sales: BaseClass
+    public class VMSales
     {
-        public int SalesID { get; set; }
         public string SalesCode { get; set; }
-        public DateTime SalesDate { get; set; } = DateTime.UtcNow;
-        public int? SalesStatus { get; set; }
-        public int? CustomerID { get; set; }
+        public DateTime? SalesDate { get; set; }
         public double? SubTotal { get; set; }
         public double? TotalSalesPrice { get; set; }
-        public int? DiscountType { get; set; }
+        public string DiscountType { get; set; }
         public double? Discount { get; set; }
+        public string? AccountTitle { get; set; }
         public double? PayAmount { get; set; }
         public double? DueAmount { get; set; }
-        public int? AccountID { get; set; }
+        public string? SalesStatus { get; set; }
+        public DateTime? CreatedDate { get; set; }
+        public string CustomerName { get; set; }
+        public string CreatedByName { get; set; }
         [NotMapped]
-        public List<VMProduct> lstProduct { get; set; }= new List<VMProduct>();
+        public List<VMProduct> lstProduct { get; set; } = new List<VMProduct>();
         [NotMapped]
         public Customer objCustomer { get; set; } = new Customer();
     }

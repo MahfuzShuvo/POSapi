@@ -7,6 +7,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Net;
+using System.Net.Sockets;
 
 namespace POS.Services
 {
@@ -54,9 +56,19 @@ namespace POS.Services
                 //----------------------//
 
 
-
                 userSession = new UserSession();
                 DateTime now = DateTime.Now;
+
+                // find device IP for security purpose
+                var host = Dns.GetHostEntry(Dns.GetHostName());
+                foreach (var ip in host.AddressList)
+                {
+                    if (ip.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        userSession.SessionIP = ip.ToString();
+                    }
+                }
+
                 userSession.SessionStart = now;
                 userSession.SessionEnd = now.AddMinutes(CommonConstant.SessionExpired);
                 userSession.Token = token;

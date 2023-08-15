@@ -13,6 +13,7 @@ namespace POS.Common.Models
         public string? Token { get; set; }
 
         public int? SystemUserID { get; set; }
+        public string? SessionIP { get; set; }
 
         public DateTime? SessionStart { get; set; }
 
