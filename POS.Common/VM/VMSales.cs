@@ -20,6 +20,7 @@ namespace POS.Common.VM
         public double? PayAmount { get; set; }
         public double? DueAmount { get; set; }
         public string? SalesStatus { get; set; }
+        public string? PaymentStatus { get; set; }
         public DateTime? CreatedDate { get; set; }
         public string CustomerName { get; set; }
         public string CreatedByName { get; set; }

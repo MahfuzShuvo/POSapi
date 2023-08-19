@@ -45,7 +45,6 @@ namespace POS.Services
                 lstSales = await _posDbContext.VMSales.OrderBy(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 responseMessage.TotalCount = lstSales.Count;
 
-
                 foreach (VMSales sales in lstSales)
                 {
                     Sales objSales = _posDbContext.Sales.AsNoTracking().Where(x => x.SalesCode == sales.SalesCode).FirstOrDefault();
@@ -57,7 +56,7 @@ namespace POS.Services
                             List<Product> lstProduct = new List<Product>();
 
                             lstProduct = await _posDbContext.Product.Where(p =>
-                                        lstSalesProductMapping.Select(ppm => ppm.ProductID).Contains(p.ProductID)).ToListAsync();
+                                        lstSalesProductMapping.Select(spm => spm.ProductID).Contains(p.ProductID)).ToListAsync();
                             if (lstProduct.Count > 0)
                             {
                                 foreach (Product objProduct in lstProduct)
@@ -301,9 +300,8 @@ namespace POS.Services
                             Product objProduct = await _posDbContext.Product.AsNoTracking().Where(x => x.ProductID == item.ProductID).FirstOrDefaultAsync();
                             if (objProduct != null)
                             {
-                                objProduct.Qty = (int)(objProduct.Qty - item.Qty);
-                                objProduct.UpdatedBy = requestMessage.UserID;
-                                objProduct.UpdatedDate = DateTime.Now;
+                                objProduct.Qty = (int)(objProduct.Qty + item.Qty);
+                                
                                 _posDbContext.Product.Update(objProduct);
                             }
                             _posDbContext.SalesProductMapping.Remove(item);
@@ -439,8 +437,7 @@ namespace POS.Services
 
                                     // update quantity of sale product
                                     existProduct.Qty = (int)(existProduct.Qty - (product.Qty ?? 0));
-                                    //existProduct.UpdatedBy = requestMessage.UserID;
-                                    //existProduct.UpdatedDate = DateTime.Now;
+                                    
                                     _posDbContext.Product.Update(existProduct);
 
                                 }

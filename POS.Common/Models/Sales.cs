@@ -13,7 +13,7 @@ namespace POS.Common.Models
         public int SalesID { get; set; }
         public string SalesCode { get; set; }
         public DateTime SalesDate { get; set; } = DateTime.UtcNow;
-        public int? SalesStatus { get; set; }
+        public int SalesStatus { get; set; } = 1;
         public int? CustomerID { get; set; }
         public double? SubTotal { get; set; }
         public double? TotalSalesPrice { get; set; }

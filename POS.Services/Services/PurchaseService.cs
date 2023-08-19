@@ -302,8 +302,7 @@ namespace POS.Services
                             if (objProduct != null)
                             {
                                 objProduct.Qty = (int)(objProduct.Qty - item.Qty);
-                                objProduct.UpdatedBy = requestMessage.UserID;
-                                objProduct.UpdatedDate = DateTime.Now;
+
                                 _posDbContext.Product.Update(objProduct);
                             }
                             _posDbContext.PurchaseProductMapping.Remove(item);
@@ -409,10 +408,10 @@ namespace POS.Services
                         else
                         {
                             // Get the current timestamp
-                            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                             // Generate a random number using the timestamp as a seed
                             //var randomNumber = new Random(timestamp.GetHashCode()).Next();
-                            objPurchase.PurchaseCode = timestamp.ToString();
+                            objPurchase.PurchaseCode = "PU" + timestamp.ToString();
 
                             objPurchase.DueAmount = objPurchase.TotalPurchasePrice - objPurchase.PaymentAmount;
 
@@ -444,8 +443,7 @@ namespace POS.Services
 
                                     // update quantity of purchased product
                                     existProduct.Qty = (int)(existProduct.Qty + (product.Qty ?? 0));
-                                    existProduct.UpdatedBy = requestMessage.UserID;
-                                    existProduct.UpdatedDate = DateTime.Now;
+
                                     _posDbContext.Product.Update(existProduct);
 
                                 }
