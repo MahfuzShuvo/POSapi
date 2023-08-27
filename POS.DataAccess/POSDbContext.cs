@@ -42,6 +42,7 @@ namespace POS.DataAccess
         public virtual DbSet<VMAccountStatement> VMAccountStatement { get; set; }
         public virtual DbSet<VMGetAccountBalanceExpense> VMGetAccountBalanceExpense { get; set; }
         public virtual DbSet<VMCountProductByCategory> VMCountProductByCategory { get; set; }
+        public virtual DbSet<VMDashboardInitialData> VMDashboardInitialData { get; set; }
 
 
 
@@ -177,6 +178,11 @@ namespace POS.DataAccess
             {
                 entity.HasNoKey();
                 entity.ToView("CountProductByCategory");
+            }); 
+            modelBuilder.Entity<VMDashboardInitialData>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("GetDashboardInitialDataView");
             });
         }
     }
