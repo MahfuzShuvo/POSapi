@@ -8,8 +8,7 @@ namespace POS.Common.VM
 {
     public class VMDashboardInitialData
     {
-        public int MonthID { get; set; }
-        public string MonthName { get; set; }
+        public int DayNumber { get; set; }
         public double? TotalSales { get; set; }
         public double? TotalPurchases { get; set; }
         public double? TotalExpenses { get; set; }

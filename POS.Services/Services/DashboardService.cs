@@ -39,7 +39,7 @@ namespace POS.Services
             {
                 List<VMDashboardInitialData> lstVMDashboardInitialData = new List<VMDashboardInitialData>();
 
-                lstVMDashboardInitialData = _posDbContext.VMDashboardInitialData.OrderBy(x => x.MonthID).ToList();
+                lstVMDashboardInitialData = _posDbContext.VMDashboardInitialData.ToList();
 
                 responseMessage.ResponseObj = lstVMDashboardInitialData;
                 responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;

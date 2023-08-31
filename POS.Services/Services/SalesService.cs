@@ -362,22 +362,7 @@ namespace POS.Services
                     if (CheckedValidation(objSales, responseMessage))
                     {
                         VMGetAccountBalanceExpense existAccount = await _posDbContext.VMGetAccountBalanceExpense.AsNoTracking().Where(x => x.AccountID == objSales.AccountID).FirstOrDefaultAsync();
-                        if (existAccount != null)
-                        {
-                            if (existAccount.CurrentBalance <= objSales.PayAmount)
-                            {
-                                responseMessage.ResponseCode = (int)Enums.ResponseCode.Warning;
-                                responseMessage.Message = "Insufficient balance! Please refill first or pay less than " + existAccount.CurrentBalance + " TK.";
-                                return responseMessage;
-                            }
-                        }
-                        else
-                        {
-                            responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
-                            responseMessage.Message = "Account not found";
-                            return responseMessage;
-                        }
-
+                        
                         if (objSales.SalesID > 0)
                         {
                             Sales existingSales = await _posDbContext.Sales.AsNoTracking().FirstOrDefaultAsync(x => x.SalesID == objSales.SalesID);
