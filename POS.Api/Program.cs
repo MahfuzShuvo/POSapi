@@ -99,6 +99,7 @@ builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IPurchaseService, PurchaseService>();
+builder.Services.AddScoped<ISalesService, SalesService>();
 builder.Services.AddScoped<IUnitService, UnitService>();
 
 

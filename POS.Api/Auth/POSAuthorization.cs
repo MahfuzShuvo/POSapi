@@ -48,7 +48,7 @@ namespace POS.API.Auth
 
                         UserSession objUserSession = objResponseMessage?.ResponseObj as UserSession;
 
-                        if (objUserSession != null)
+                        if (objUserSession != null && objUserSession.Token == headerToken)
                         {
                             TimeSpan ts = DateTime.Now - objUserSession.SessionEnd.Value;
                             int min = ts.Minutes;
@@ -76,8 +76,8 @@ namespace POS.API.Auth
                                     RequestMessage objRequestMessageNew = new RequestMessage();
 
                                     DateTime dateTime = DateTime.Now.AddMinutes(CommonConstant.SessionExpired);
-                                    objUserSession.SessionEnd= dateTime;
-                                    objRequestMessageNew.RequestObj =JsonConvert.SerializeObject(objUserSession);
+                                    objUserSession.SessionEnd = dateTime;
+                                    objRequestMessageNew.RequestObj = JsonConvert.SerializeObject(objUserSession);
 
                                     await userSessionService.SaveUserSession(objRequestMessageNew);
                                     await _next(httpContext);
@@ -121,7 +121,7 @@ namespace POS.API.Auth
                     await httpContext.Response.WriteAsJsonAsync("Unauthorize");
                 }
             }
-            
+
         }
 
 

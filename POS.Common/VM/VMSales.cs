@@ -8,28 +8,25 @@ using System.Threading.Tasks;
 
 namespace POS.Common.VM
 {
-    public class VMPurchase
+    public class VMSales
     {
-        public string PurchaseCode { get; set; }
-        public DateTime? PurchaseDate { get; set; }
-        //public string? ProductSKUs { get; set; }
+        public string SalesCode { get; set; }
+        public DateTime? SalesDate { get; set; }
         public double? SubTotal { get; set; }
-        public double? TotalPurchasePrice { get; set; }
-        public double? OtherCharge { get; set; }
+        public double? TotalSalesPrice { get; set; }
         public string DiscountType { get; set; }
         public double? Discount { get; set; }
         public string? AccountTitle { get; set; }
-        public double? PaymentAmount { get; set; }
+        public double? PayAmount { get; set; }
         public double? DueAmount { get; set; }
+        public string? SalesStatus { get; set; }
         public string? PaymentStatus { get; set; }
-        public string? PaymentNote { get; set; }
-        public string PurchaseStatus { get; set; }
         public DateTime? CreatedDate { get; set; }
-        public string SupplierName { get; set; }
+        public string CustomerName { get; set; }
         public string CreatedByName { get; set; }
         [NotMapped]
         public List<VMProduct> lstProduct { get; set; } = new List<VMProduct>();
         [NotMapped]
-        public Supplier objSupplier { get; set; } = new Supplier();
+        public Customer objCustomer { get; set; } = new Customer();
     }
 }

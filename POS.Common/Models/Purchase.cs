@@ -12,7 +12,7 @@ namespace POS.Common.Models
     {
         public int PurchaseID { get; set; }
         public string? PurchaseCode { get; set; }
-        public DateTime? PurchaseDate { get; set; } = DateTime.UtcNow;
+        public DateTime PurchaseDate { get; set; } = DateTime.UtcNow;
         public int? PurchaseStatus { get; set; }
         public int? SupplierID { get; set; }
         public double? SubTotal { get; set; }
