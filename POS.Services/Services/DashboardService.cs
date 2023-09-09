@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using POS.Common.VM;
+using POS.Common.QueryHelper;
 
 namespace POS.Services
 {
@@ -37,9 +38,17 @@ namespace POS.Services
             ResponseMessage responseMessage = new ResponseMessage();
             try
             {
+                DateTime currentDate = DateTime.Now;
+                int monthNumber = JsonConvert.DeserializeObject<int>(requestMessage.RequestObj.ToString());
+                if (monthNumber == 0)
+                {
+                    monthNumber = currentDate.Month;
+                }
+
                 List<VMDashboardInitialData> lstVMDashboardInitialData = new List<VMDashboardInitialData>();
 
-                lstVMDashboardInitialData = _posDbContext.VMDashboardInitialData.ToList();
+                string sql = SQLContent.GetDashboardInitialDataQuery(monthNumber);
+                lstVMDashboardInitialData = _posDbContext.VMDashboardInitialData.FromSqlRaw(sql).ToList();
 
                 responseMessage.ResponseObj = lstVMDashboardInitialData;
                 responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;

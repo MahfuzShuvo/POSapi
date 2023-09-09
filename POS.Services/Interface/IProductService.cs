@@ -22,5 +22,6 @@ namespace POS.Services.Interface
         Task<ResponseMessage> GetInitialDataForSaveProduct(RequestMessage requestMessage);
         Task<ResponseMessage> ChangeProductStatus(RequestMessage requestMessage);
         Task<ResponseMessage> SearchProduct(RequestMessage requestMessage);
+        Task<ResponseMessage> ImportProduct(RequestMessage requestMessage);
     }
 }

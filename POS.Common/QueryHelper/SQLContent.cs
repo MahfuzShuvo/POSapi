@@ -4,49 +4,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace POS.Common.Constants
+namespace POS.Common.QueryHelper
 {
-    public static class MessageConstant
+    public static class SQLContent
     {
-        public const string SavedSuccessfully = "Saved successfully";
-        public const string RegisterSuccessfully = "Register successfully";
-        public const string SaveFailed = "Failed to save information";
-        public const string DeleteFailed = "Failed to delete";
-        public const string DeleteSuccess = "Delete successfully";
-        public const string Token = "Token is required";
-        public const string Unauthorizerequest = "Unauthorize request";
-        public const string InternalServerError = "Internal server error";
-        public const string LoginSuccess = "Logged in successfully";
-        public const string LogOutSuccessfully = "Logout successfully";
-        public const string Invaliddatafound = "Invalid data found";
-    }
-
-    public static class CommonConstant
-    {
-        public static DateTime DeafultDate = Convert.ToDateTime("1900/01/01");
-        public static int SessionExpired = 30;
-        public static string NoImage = "no-image.png";
-    }
-
-    public static class CommonPath
-    {
-        public const string loginUrl = "/api/security/login";
-        public const string registerUrl = "/api/security/register";
-    }
-    public class HttpHeaders
-    {
-        public const string Token = "Authorization";
-        public const string AuthenticationSchema = "Bearer";
-    }
-
-    public class QueryString
-    {
-        public const string DashboardInitialData = @"WITH AllDays AS (
+        public static string GetDashboardInitialDataQuery(int monthNumber)
+        {
+            string sql = string.Format(@"WITH AllDays AS (
                 SELECT 1 AS DayNumber
                 UNION ALL
                 SELECT DayNumber + 1
                 FROM AllDays
-                WHERE DayNumber < DAY(EOMONTH({0}))
+                WHERE DayNumber < DAY(EOMONTH(DATEFROMPARTS(YEAR(GETDATE()), {0}, 1)))
             ),
             DayTotals AS (
                 SELECT
@@ -90,10 +59,13 @@ namespace POS.Common.Constants
             FROM
                 AllDays AD
             LEFT JOIN
-                DayTotals DT ON AD.DayNumber = DT.DayID and MONTH({0}) = DT.MonthID
+                DayTotals DT ON AD.DayNumber = DT.DayID and DT.MonthID = {0}
             LEFT JOIN
-                PurchaseTotals PT ON AD.DayNumber = PT.DayID and MONTH({0}) = PT.MonthID
+                PurchaseTotals PT ON AD.DayNumber = PT.DayID and PT.MonthID = {0}
             LEFT JOIN
-                ExpenseTotals ET ON AD.DayNumber = ET.DayID and MONTH({0}) = ET.MonthID";
+                ExpenseTotals ET ON AD.DayNumber = ET.DayID and ET.MonthID = {0}", monthNumber);
+
+            return sql;
+        }
     }
 }

@@ -523,6 +523,133 @@ namespace POS.Services
             return responseMessage;
         }
 
+        public async Task<ResponseMessage> ImportProduct(RequestMessage requestMessage)
+        {
+            ResponseMessage responseMessage = new ResponseMessage();
+            int actionType = (int)Enums.ActionType.Insert;
+            try
+            {
+                List<VMProduct> lstProduct = new List<VMProduct>();
+                List<VMProductImport> lstVMProductImport = JsonConvert.DeserializeObject<List<VMProductImport>>(requestMessage.RequestObj.ToString());
+
+                if (lstVMProductImport?.Count > 0)
+                {
+                    int productCount = 0;
+                    foreach (VMProductImport productImport in lstVMProductImport)
+                    {
+                        Product objProduct = new Product();
+                        Product existProduct =_posDbContext.Product.AsNoTracking().Where(x => x.ProductName == productImport.ProductName).FirstOrDefault();
+                        if (existProduct != null)
+                        {
+                            continue;
+                        }
+                        objProduct.ProductName = productImport.ProductName;
+                        objProduct.Description = productImport.Description ?? "";
+                        objProduct.Image = CommonConstant.NoImage;
+                        objProduct.Qty = productImport.StockQuantity;
+                        objProduct.MinQty = productImport.AlertQuantity;
+                        objProduct.ExpireDate = !string.IsNullOrEmpty(productImport.ExpireDate)
+                                    ? Convert.ToDateTime(productImport.ExpireDate) : null;
+
+                        var existCategory = _posDbContext.Category.AsNoTracking().Where(x => x.CategoryName == productImport.Category).FirstOrDefault();
+                        if (existCategory != null)
+                        {
+                            objProduct.CategoryID = existCategory.CategoryID;
+                        }
+                        else
+                        {
+                            responseMessage.Message = "Category not exiist in the system";
+                            responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                            return responseMessage;
+                        }
+
+                        var existBrand = _posDbContext.Brand.AsNoTracking().Where(x => x.BrandName == productImport.Brand).FirstOrDefault();
+                        objProduct.BrandID = (existBrand != null) ? existBrand.BrandID : 0;
+
+                        var existUnit = _posDbContext.Unit.AsNoTracking().Where(x => x.UnitName == productImport.Unit).FirstOrDefault();
+                        if (existUnit != null)
+                        {
+                            objProduct.Unit = existUnit.UnitID;
+                        }
+                        else
+                        {
+                            Unit objUnit = new Unit();
+                            objUnit.UnitName = productImport.Unit;
+
+                            await _posDbContext.AddAsync(objUnit);
+                            await _posDbContext.SaveChangesAsync();
+
+                            var newUnit = _posDbContext.Unit.AsNoTracking().Where(x => x.UnitName == productImport.Unit).FirstOrDefault();
+                            if (newUnit != null)
+                            {
+                                objProduct.Unit = newUnit.UnitID;
+                            }
+                            else
+                            {
+                                responseMessage.Message = "Failed to save unit";
+                                responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                                return responseMessage;
+                            }
+                        }
+
+                        objProduct.Tax = (productImport.Tax > 0) ? productImport.Tax : 0;
+                        objProduct.TaxType = (productImport.Tax > 0) ? 1 : 0;
+                        objProduct.Discount = (productImport.Discount > 0) ? productImport.Discount : 0; 
+                        objProduct.DiscountType = (productImport.Discount > 0) ? 2 : 0;
+
+                        objProduct.Price = productImport.PurchasePrice;
+                        objProduct.PurchasePrice = (objProduct.Tax > 0)
+                                ? objProduct.Price + ((objProduct.Price * objProduct.Tax) / 100)
+                                : productImport.PurchasePrice;
+
+                        objProduct.SellingPrice = productImport.SellingPrice;
+                        objProduct.ProfitMargin = (int)((productImport.ProfitMargin > 0)
+                                ? productImport.ProfitMargin
+                                : Math.Round(((objProduct.SellingPrice / objProduct.Price) - 1) * 100));
+                        objProduct.FinalPrice = (objProduct.Tax > 0)
+                                ? objProduct.PurchasePrice + (objProduct.PurchasePrice * (objProduct.ProfitMargin / 100))
+                                : objProduct.SellingPrice;
+
+                        objProduct.CreatedBy = requestMessage.UserID;
+                        objProduct.CreatedDate = DateTime.Now;
+
+                        objProduct.SKU = "GP" + DateTime.Now.ToString("MMddyyyyhhmm")+ productCount;
+                        objProduct.Slug = GenerateSlug(objProduct.ProductName) + "-" + objProduct.SKU;
+
+                        _posDbContext.Product.Add(objProduct);
+                        _posDbContext.SaveChanges();
+                        productCount++;
+                        VMProduct product = _posDbContext.VMProduct.AsNoTracking().Where(x => x.SKU == objProduct.SKU).FirstOrDefault();
+                        if (product != null)
+                        {
+                            string getshowUrl = _configuration.GetSection("Attachments").GetSection("ShowFilePath").Value;
+                            product.Image = getshowUrl + product.Image;
+                        }
+                        
+                        lstProduct.Add(product);
+                    }
+                    if (lstProduct.Count > 0)
+                    {
+                        responseMessage.ResponseObj = lstProduct;
+                        responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
+                        responseMessage.Message = "Product imported successfully";
+                    }
+                }
+                else
+                {
+                    responseMessage.Message = "No product exist in the file";
+                    responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                }
+            }
+            catch (Exception ex)
+            {
+                //Process excetion, Development mode show real exception and production mode will show custom exception.
+                responseMessage.Message = ExceptionHelper.ProcessException(ex, actionType, requestMessage.UserID, JsonConvert.SerializeObject(requestMessage.RequestObj), "ImportProduct");
+                responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+            }
+            return responseMessage;
+        }
+
 
         public async Task<ResponseMessage> SearchProduct(RequestMessage requestMessage)
         {
@@ -580,5 +707,6 @@ namespace POS.Services
 
             return true;
         }
+
     }
 }

@@ -76,5 +76,11 @@ namespace POS.API.Controllers
         {
             return await _productService.SearchProduct(requestMessage);
         }
+        
+        [HttpPost("ImportProduct")]
+        public async Task<ResponseMessage> ImportProduct(RequestMessage requestMessage)
+        {
+            return await _productService.ImportProduct(requestMessage);
+        }
     }
 }

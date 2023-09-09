@@ -15,7 +15,7 @@ namespace POS.Common.Models
         public string? Description { get; set; }
         public string? SKU { get; set; }
         public string? Slug { get; set; }
-        public string Image { get; set; }
+        public string? Image { get; set; }
         public int Unit { get; set; } = 0;
         [NotMapped]
         public string UnitName { get; set; }
