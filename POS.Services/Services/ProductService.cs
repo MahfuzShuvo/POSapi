@@ -125,7 +125,7 @@ namespace POS.Services
                 {
                     lstProduct = await _posDbContext.VMProduct.Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 }
-                
+
                 responseMessage.TotalCount = lstProduct.Count;
 
                 foreach (VMProduct product in lstProduct)
@@ -201,7 +201,7 @@ namespace POS.Services
             try
             {
                 Product objProduct = new Product();
-                
+
                 Product product = JsonConvert.DeserializeObject<Product>(requestMessage?.RequestObj.ToString());
                 string slug = product.Slug;
 
@@ -393,12 +393,12 @@ namespace POS.Services
                         }
                         else
                         {
-                            
+
                             //objProduct.Status = (int)Enums.Status.Active;
                             objProduct.CreatedDate = DateTime.Now;
                             objProduct.CreatedBy = requestMessage.UserID;
 
-                            objProduct.SKU = "GP"+DateTime.Now.ToString("MMddyyyyhhmm");
+                            objProduct.SKU = "GP" + DateTime.Now.ToString("MMddyyyyhhmm");
                             objProduct.Slug = GenerateSlug(objProduct.ProductName) + "-" + objProduct.SKU;
 
                             await _posDbContext.Product.AddAsync(objProduct);
@@ -538,7 +538,7 @@ namespace POS.Services
                     foreach (VMProductImport productImport in lstVMProductImport)
                     {
                         Product objProduct = new Product();
-                        Product existProduct =_posDbContext.Product.AsNoTracking().Where(x => x.ProductName == productImport.ProductName).FirstOrDefault();
+                        Product existProduct = _posDbContext.Product.AsNoTracking().Where(x => x.ProductName == productImport.ProductName).FirstOrDefault();
                         if (existProduct != null)
                         {
                             continue;
@@ -594,7 +594,7 @@ namespace POS.Services
 
                         objProduct.Tax = (productImport.Tax > 0) ? productImport.Tax : 0;
                         objProduct.TaxType = (productImport.Tax > 0) ? 1 : 0;
-                        objProduct.Discount = (productImport.Discount > 0) ? productImport.Discount : 0; 
+                        objProduct.Discount = (productImport.Discount > 0) ? productImport.Discount : 0;
                         objProduct.DiscountType = (productImport.Discount > 0) ? 2 : 0;
 
                         objProduct.Price = productImport.PurchasePrice;
@@ -613,7 +613,7 @@ namespace POS.Services
                         objProduct.CreatedBy = requestMessage.UserID;
                         objProduct.CreatedDate = DateTime.Now;
 
-                        objProduct.SKU = "GP" + DateTime.Now.ToString("MMddyyyyhhmm")+ productCount;
+                        objProduct.SKU = "GP" + DateTime.Now.ToString("MMddyyyyhhmm") + productCount;
                         objProduct.Slug = GenerateSlug(objProduct.ProductName) + "-" + objProduct.SKU;
 
                         _posDbContext.Product.Add(objProduct);
@@ -625,7 +625,7 @@ namespace POS.Services
                             string getshowUrl = _configuration.GetSection("Attachments").GetSection("ShowFilePath").Value;
                             product.Image = getshowUrl + product.Image;
                         }
-                        
+
                         lstProduct.Add(product);
                     }
                     if (lstProduct.Count > 0)
@@ -662,7 +662,7 @@ namespace POS.Services
 
                 lstProduct = await _posDbContext.VMProduct.Where(x => x.Status == (int)Enums.Status.Active).ToListAsync();
 
-                lstProduct = lstProduct.Where(x => x.ProductName.ToLower().Contains(searchText?.ToLower()) 
+                lstProduct = lstProduct.Where(x => x.ProductName.ToLower().Contains(searchText?.ToLower())
                                                 || x.SKU.ToLower().Contains(searchText?.ToLower())).ToList();
 
                 if (lstProduct.Count > 0)
