@@ -8,7 +8,7 @@ namespace POS.Common.Helper.AuditLog
 {
     public class AuditLogMain
     {
-        public long AuditLogMainID { get; set; }
+        public int AuditLogMainID { get; set; }
         public string InputObject { get; set; }
 
         public int UserId { get; set; } = 0;

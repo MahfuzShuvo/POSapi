@@ -23,7 +23,7 @@ namespace POS.Common.Helper
                 objAuditLogMain.MethodName = methodName;
                 objAuditLogMain.CreatedDate = DateTime.Now;
 
-                using (var posAuditLogDbContext = new POSAuditLogDbContext())
+                using (var posAuditLogDbContext = LogDBHelper.CreateDbContext())
                 {
                     posAuditLogDbContext.Add<AuditLogMain>(objAuditLogMain);
                     posAuditLogDbContext.SaveChanges();

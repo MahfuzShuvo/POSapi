@@ -108,10 +108,10 @@ namespace POS.Services.Services
 
                 if (objRolePermissionMapping.RolePermissionMappingID > 0)
                 {
-                    if (objRolePermissionMapping.RolePermissionMappingID == 1)
+                    if (objRolePermissionMapping.RoleID == 1)
                     {
                         responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
-                        responseMessage.Message = "RolePermissionMapping 'Global Admin' can not be deleted";
+                        responseMessage.Message = "You can not change the permission of 'Global Admin'.";
                         return responseMessage;
                     }
                     _posDbContext.RolePermissionMapping.Remove(objRolePermissionMapping);

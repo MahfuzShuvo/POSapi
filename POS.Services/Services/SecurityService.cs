@@ -80,12 +80,37 @@ namespace POS.Services.Services
                     objVMLogin.RoleID = existingSystemUser.RoleID;
                 }
 
+                // get list of permission for the logged in user
+                List<Permission> lstPermission = new List<Permission>();
+                if (objVMLogin.RoleID > 0)
+                {
+                    if (objVMLogin.RoleID == 1)
+                    {
+                        lstPermission = _posDbContext.Permission.ToList();
+                    }
+                    else
+                    {
+                        List<int?> lstMappingID = new List<int?>();
+                        lstMappingID = _posDbContext.RolePermissionMapping.Where(x => x.RoleID == objVMLogin.RoleID)
+                                                                                        .Select(x => x.PermissionID).ToList();
+                        if (lstMappingID.Count > 0)
+                        {
+                            lstPermission = _posDbContext.Permission.Where(x => lstMappingID.Contains(x.PermissionID)).ToList();
+                        }
+                    }
+
+                    if (lstPermission.Count > 0)
+                    {
+                        objVMLogin.lstPermission = lstPermission;
+                    }
+                }
+
+                objVMLogin.Password = String.Empty;
                 
+                responseMessage.ResponseObj = objVMLogin;
                 responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
                 responseMessage.Message = MessageConstant.LoginSuccess;
 
-                objVMLogin.Password = String.Empty;
-                responseMessage.ResponseObj = objVMLogin;
 
                 //Log write
                 LogHelper.WriteLog(requestMessage.RequestObj, (int)Enums.ActionType.Login, objVMLogin.SystemUserID, "Login");

@@ -25,7 +25,7 @@ namespace POS.Common.Helper.AuditLog
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            string conn = DBConnection.Configuration.GetConnectionString("POSAuditLog");
+            string conn = DBConnection.Configuration.GetConnectionString("AuditLogCN");
 
             optionsBuilder.UseSqlServer(conn);
         }

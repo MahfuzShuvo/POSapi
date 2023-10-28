@@ -1,6 +1,7 @@
 using POS.Common.Models;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,5 +16,7 @@ namespace POS.Common.VM
         public string Token { get; set; }
         public int SystemUserID { get; set; } = 0;
         public int RoleID { get; set; } = 0;
+        [NotMapped]
+        public List<Permission> lstPermission { get; set; } = new List<Permission>();
     }
 }

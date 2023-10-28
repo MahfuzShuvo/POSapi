@@ -6,6 +6,7 @@ using POS.Services.Services;
 using POS.Services;
 using POS.API.Auth;
 using POS.Common.Helper.AuditLog;
+using POS.Common.Helper;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -105,6 +106,14 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 
 /*-------------Service register area-------END-----*/
+
+var configuration = new ConfigurationBuilder()
+           .SetBasePath(builder.Environment.ContentRootPath)
+           .AddJsonFile("appsettings.json")
+           .Build();
+
+// Initialize AppConfig with the configuration
+LogDBHelper.Initialize(configuration);
 
 
 var app = builder.Build();
