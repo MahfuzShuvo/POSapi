@@ -366,21 +366,25 @@ namespace POS.Services
                 {
                     if (CheckedValidation(objPurchase, responseMessage))
                     {
-                        VMGetAccountBalanceExpense existAccount = await _posDbContext.VMGetAccountBalanceExpense.AsNoTracking().Where(x => x.AccountID == objPurchase.PaymentType).FirstOrDefaultAsync();
-                        if (existAccount != null)
+                        if (objPurchase.PaymentAmount > 0)
                         {
-                            if (existAccount.CurrentBalance <= objPurchase.PaymentAmount)
+
+                            VMGetAccountBalanceExpense existAccount = await _posDbContext.VMGetAccountBalanceExpense.AsNoTracking().Where(x => x.AccountID == objPurchase.PaymentType).FirstOrDefaultAsync();
+                            if (existAccount != null)
                             {
-                                responseMessage.ResponseCode = (int)Enums.ResponseCode.Warning;
-                                responseMessage.Message = "Insufficient balance! Please refill first or pay less than " + existAccount.CurrentBalance + " TK.";
+                                if (existAccount.CurrentBalance <= objPurchase.PaymentAmount)
+                                {
+                                    responseMessage.ResponseCode = (int)Enums.ResponseCode.Warning;
+                                    responseMessage.Message = "Insufficient balance! Please refill first or pay less than " + existAccount.CurrentBalance + " TK.";
+                                    return responseMessage;
+                                }
+                            }
+                            else
+                            {
+                                responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                                responseMessage.Message = "Account not found";
                                 return responseMessage;
                             }
-                        }
-                        else
-                        {
-                            responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
-                            responseMessage.Message = "Account not found";
-                            return responseMessage;
                         }
 
                         if (objPurchase.PurchaseID > 0)
