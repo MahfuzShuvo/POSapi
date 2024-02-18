@@ -530,6 +530,7 @@ namespace POS.Services
             try
             {
                 List<VMProduct> lstProduct = new List<VMProduct>();
+                List<VMProductImportReport> lstProductImportReport = new List<VMProductImportReport>();
                 List<VMProductImport> lstVMProductImport = JsonConvert.DeserializeObject<List<VMProductImport>>(requestMessage.RequestObj.ToString());
 
                 if (lstVMProductImport?.Count > 0)
@@ -541,6 +542,13 @@ namespace POS.Services
                         Product existProduct = _posDbContext.Product.AsNoTracking().Where(x => x.ProductName == productImport.ProductName).FirstOrDefault();
                         if (existProduct != null)
                         {
+                            VMProductImportReport objReport = new VMProductImportReport();
+                            objReport.ProductName = existProduct.ProductName;
+                            objReport.Status = (int)Enums.ResponseCode.Warning;
+                            objReport.StatusReason = "Already exist";
+
+                            lstProductImportReport.Add(objReport);
+
                             continue;
                         }
                         objProduct.ProductName = productImport.ProductName;
@@ -558,9 +566,17 @@ namespace POS.Services
                         }
                         else
                         {
-                            responseMessage.Message = "Category not exiist in the system";
-                            responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
-                            return responseMessage;
+                            //responseMessage.Message = "Category not exiist in the system";
+                            //responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                            //return responseMessage;
+                            VMProductImportReport objReport = new VMProductImportReport();
+                            objReport.ProductName = existProduct.ProductName;
+                            objReport.Status = (int)Enums.ResponseCode.Failed;
+                            objReport.StatusReason = "Category '"+productImport.Category + "' is not exist in the system";
+
+                            lstProductImportReport.Add(objReport);
+
+                            continue;
                         }
 
                         var existBrand = _posDbContext.Brand.AsNoTracking().Where(x => x.BrandName == productImport.Brand).FirstOrDefault();
@@ -586,9 +602,17 @@ namespace POS.Services
                             }
                             else
                             {
-                                responseMessage.Message = "Failed to save unit";
-                                responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
-                                return responseMessage;
+                                //responseMessage.Message = "Failed to save unit";
+                                //responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                                //return responseMessage;
+                                VMProductImportReport objReport = new VMProductImportReport();
+                                objReport.ProductName = existProduct.ProductName;
+                                objReport.Status = (int)Enums.ResponseCode.Failed;
+                                objReport.StatusReason = "Failed to save the unit";
+
+                                lstProductImportReport.Add(objReport);
+
+                                continue;
                             }
                         }
 
@@ -633,6 +657,17 @@ namespace POS.Services
                         responseMessage.ResponseObj = lstProduct;
                         responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
                         responseMessage.Message = "Product imported successfully";
+                    } 
+                    else if (lstProductImportReport.Count > 0)
+                    {
+                        responseMessage.ResponseObj = lstProductImportReport;
+                        responseMessage.ResponseCode = (int)Enums.ResponseCode.Warning;
+                    }
+                    else
+                    {
+                        responseMessage.ResponseObj = null;
+                        responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                        responseMessage.Message = "Something went wrong";
                     }
                 }
                 else

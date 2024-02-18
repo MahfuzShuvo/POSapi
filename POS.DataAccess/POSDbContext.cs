@@ -36,6 +36,7 @@ namespace POS.DataAccess
         public virtual DbSet<Supplier> Supplier { get; set; }
         public virtual DbSet<SystemUser> SystemUser { get; set; }
         public virtual DbSet<Unit> Unit { get; set; }
+        public virtual DbSet<Branch> Branch { get; set; }
         public virtual DbSet<VMProduct> VMProduct { get; set; }
         public virtual DbSet<VMPurchase> VMPurchase { get; set; }
         public virtual DbSet<VMSales> VMSales { get; set; }
@@ -147,6 +148,11 @@ namespace POS.DataAccess
             {
                 entity.HasKey(x => x.UnitID);
                 entity.ToTable("Unit");
+            });
+            modelBuilder.Entity<Branch>(entity =>
+            {
+                entity.HasKey(x => x.BranchID);
+                entity.ToTable("Branch");
             });
 
             modelBuilder.Entity<VMGetAccountBalanceExpense>(entity =>
