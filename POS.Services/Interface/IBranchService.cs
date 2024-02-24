@@ -16,6 +16,7 @@ namespace POS.Services.Interface
         Task<ResponseMessage> SaveBranch(RequestMessage requestMessage);
         Task<ResponseMessage> GetBranchById(RequestMessage requestMessage);
         Task<ResponseMessage> DeleteBranch(RequestMessage requestMessage);
-
+        Task<ResponseMessage> AssignUserToBranch(RequestMessage requestMessage);
+        Task<ResponseMessage> RemoveUserFromBranch(RequestMessage requestMessage);
     }
 }

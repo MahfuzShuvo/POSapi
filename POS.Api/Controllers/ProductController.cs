@@ -3,6 +3,7 @@ using POS.Services;
 using POS.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using POS.Common.Models;
 
 namespace POS.API.Controllers
 {

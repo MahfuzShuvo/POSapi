@@ -16,6 +16,7 @@ using Microsoft.Extensions.Configuration;
 using System.Text.RegularExpressions;
 using POS.Common.VM;
 using static POS.Common.Enums.Enums;
+using POS.Common.QueryHelper;
 
 namespace POS.Services
 {
@@ -71,11 +72,16 @@ namespace POS.Services
             try
             {
                 List<VMProduct> lstProduct = new List<VMProduct>();
+                int branchID = JsonConvert.DeserializeObject<int>(requestMessage?.RequestObj.ToString());
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
 
-                lstProduct = await _posDbContext.VMProduct.Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
-                responseMessage.TotalCount = lstProduct.Count;
+
+                string sql = SQLContent.GetAllProductByBranchID(branchID);
+                var lst = _posDbContext.VMProduct.FromSqlRaw(sql);
+                lstProduct = lst.Skip(totalSkip).Take(requestMessage.PageRecordSize).OrderBy(x => x.ProductName).ToList();
+
+                responseMessage.TotalCount = lst.ToList().Count;
 
                 foreach (VMProduct product in lstProduct)
                 {
@@ -111,19 +117,24 @@ namespace POS.Services
         public async Task<ResponseMessage> GetAllProductByCategoryID(RequestMessage requestMessage)
         {
             ResponseMessage responseMessage = new ResponseMessage();
-            int categoryID = JsonConvert.DeserializeObject<int>(requestMessage?.RequestObj.ToString());
             try
             {
                 List<VMProduct> lstProduct = new List<VMProduct>();
+                var objProduct = JsonConvert.DeserializeObject<VMProduct>(requestMessage?.RequestObj.ToString());
+
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
-                if (categoryID > 0)
+
+                string sql = SQLContent.GetAllProductByBranchID(objProduct.BranchID);
+                var lst = _posDbContext.VMProduct.FromSqlRaw(sql);
+
+                if (objProduct.CategoryID > 0)
                 {
-                    lstProduct = await _posDbContext.VMProduct.Where(x => x.CategoryID == categoryID).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
+                    lstProduct = await lst.Where(x => x.CategoryID == objProduct.CategoryID).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 }
                 else
                 {
-                    lstProduct = await _posDbContext.VMProduct.Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
+                    lstProduct = await lst.Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 }
 
                 responseMessage.TotalCount = lstProduct.Count;
@@ -554,7 +565,6 @@ namespace POS.Services
                         objProduct.ProductName = productImport.ProductName;
                         objProduct.Description = productImport.Description ?? "";
                         objProduct.Image = CommonConstant.NoImage;
-                        objProduct.Qty = productImport.StockQuantity;
                         objProduct.MinQty = productImport.AlertQuantity;
                         objProduct.ExpireDate = !string.IsNullOrEmpty(productImport.ExpireDate)
                                     ? Convert.ToDateTime(productImport.ExpireDate) : null;
@@ -572,7 +582,7 @@ namespace POS.Services
                             VMProductImportReport objReport = new VMProductImportReport();
                             objReport.ProductName = existProduct.ProductName;
                             objReport.Status = (int)Enums.ResponseCode.Failed;
-                            objReport.StatusReason = "Category '"+productImport.Category + "' is not exist in the system";
+                            objReport.StatusReason = "Category '" + productImport.Category + "' is not exist in the system";
 
                             lstProductImportReport.Add(objReport);
 
@@ -657,7 +667,7 @@ namespace POS.Services
                         responseMessage.ResponseObj = lstProduct;
                         responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
                         responseMessage.Message = "Product imported successfully";
-                    } 
+                    }
                     else if (lstProductImportReport.Count > 0)
                     {
                         responseMessage.ResponseObj = lstProductImportReport;

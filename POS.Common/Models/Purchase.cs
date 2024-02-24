@@ -14,6 +14,7 @@ namespace POS.Common.Models
         public string? PurchaseCode { get; set; }
         public DateTime PurchaseDate { get; set; } = DateTime.UtcNow;
         public int? PurchaseStatus { get; set; }
+        public int BranchID { get; set; }
         public int? SupplierID { get; set; }
         public double? SubTotal { get; set; }
         public double? TotalPurchasePrice { get; set; }

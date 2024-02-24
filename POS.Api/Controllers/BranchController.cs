@@ -40,5 +40,17 @@ namespace POS.API.Controllers
         {
             return await _BranchService.DeleteBranch(requestMessage);
         }
+
+        [HttpPost("AssignUserToBranch")]
+        public async Task<ResponseMessage> AssignUserToBranch(RequestMessage requestMessage)
+        {
+            return await _BranchService.AssignUserToBranch(requestMessage);
+        } 
+        
+        [HttpPost("RemoveUserFromBranch")]
+        public async Task<ResponseMessage> RemoveUserFromBranch(RequestMessage requestMessage)
+        {
+            return await _BranchService.RemoveUserFromBranch(requestMessage);
+        }
     }
 }

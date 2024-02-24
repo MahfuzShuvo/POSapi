@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,5 +24,7 @@ namespace POS.Common.VM
         public string CategoryName { get; set; }
         public string BrandName { get; set; }
         public string UnitName { get; set; }
+        [NotMapped]
+        public int BranchID { get; set; }
     }
 }

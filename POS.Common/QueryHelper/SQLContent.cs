@@ -67,5 +67,47 @@ namespace POS.Common.QueryHelper
 
             return sql;
         }
+
+        public static string GetAllProductByBranchID(int branchID)
+        {
+            string sql = string.Format(@"SELECT
+                p.SKU, 
+                p.ProductName, 
+                p.Description, 
+                p.Slug, 
+                p.Image, 
+                p.PurchasePrice, 
+                p.FinalPrice, 
+                ISNULL(SUM(bpm.Quantity), 0) Qty,
+                p.MinQty,
+                p.Status,
+                p.CategoryID,
+                p.BrandID,
+                ISNULL(c.CategoryName, '') CategoryName, 
+                ISNULL(b.BrandName, '') BrandName, 
+                ISNULL(u.UnitName, '') UnitName
+            FROM dbo.Product AS p
+            left JOIN dbo.Category AS c ON c.CategoryID = p.CategoryID 
+            left JOIN dbo.Brand AS b ON b.BrandID = p.BrandID 
+            left JOIN dbo.Unit AS u ON u.UnitID = p.Unit
+            left JOIN BranchProductMapping AS bpm ON bpm.ProductID = p.ProductID and bpm.BranchID={0}
+            Group by
+                p.SKU, 
+                p.ProductName, 
+                p.Description, 
+                p.Slug, 
+                p.Image, 
+                p.PurchasePrice, 
+                p.FinalPrice, 
+                p.MinQty,
+                p.Status,
+                p.CategoryID,
+                p.BrandID,
+                ISNULL(c.CategoryName, ''), 
+                ISNULL(b.BrandName, ''), 
+                ISNULL(u.UnitName, '')", branchID);
+
+            return sql;
+        }
     }
 }

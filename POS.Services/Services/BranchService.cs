@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace POS.Services
 {
-    public class BranchService: IBranchService
+    public class BranchService : IBranchService
     {
         private readonly POSDbContext _posDbContext;
 
@@ -40,6 +40,21 @@ namespace POS.Services
 
                 lstBranch = await _posDbContext.Branch.OrderBy(x => x.BranchID).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 responseMessage.TotalCount = lstBranch.Count;
+
+                foreach (Branch branch in lstBranch)
+                {
+                    List<int?> branchUserMappingIds = new List<int?>();
+
+                    branchUserMappingIds = _posDbContext.BranchUserMapping
+                            .AsNoTracking()
+                            .Where(x => x.BranchID == branch.BranchID)
+                            .Select(x => x.SystemUserID)
+                            .ToList();
+
+                    branch.lstAssignedUser = _posDbContext.SystemUser
+                            .AsNoTracking()
+                            .Where(x=> branchUserMappingIds!.Contains(x.SystemUserID)).ToList();
+                }
 
 
                 responseMessage.ResponseObj = lstBranch;
@@ -73,6 +88,19 @@ namespace POS.Services
                 int BranchID = JsonConvert.DeserializeObject<int>(requestMessage?.RequestObj.ToString());
 
                 objBranch = await _posDbContext.Branch.FirstOrDefaultAsync(x => x.BranchID == BranchID && x.Status == (int)Enums.Status.Active);
+
+                List<int?> branchUserMappingIds = new List<int?>();
+
+                branchUserMappingIds = _posDbContext.BranchUserMapping
+                        .AsNoTracking()
+                        .Where(x => x.BranchID == objBranch!.BranchID)
+                        .Select(x => x.SystemUserID)
+                        .ToList();
+
+                objBranch!.lstAssignedUser = _posDbContext.SystemUser
+                        .AsNoTracking()
+                        .Where(x => branchUserMappingIds!.Contains(x.SystemUserID)).ToList();
+
                 responseMessage.ResponseObj = objBranch;
                 responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
 
@@ -88,8 +116,8 @@ namespace POS.Services
 
             return responseMessage;
         }
-        
-        
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -105,15 +133,17 @@ namespace POS.Services
                 int BranchID = JsonConvert.DeserializeObject<int>(requestMessage?.RequestObj.ToString());
 
                 objBranch = await _posDbContext.Branch.AsNoTracking().FirstOrDefaultAsync(x => x.BranchID == BranchID);
-               
+
                 if (objBranch.BranchID > 0)
                 {
+                    List<BranchUserMapping> lstBranchUserMapping = new List<BranchUserMapping>();
+                    lstBranchUserMapping=_posDbContext.BranchUserMapping.AsNoTracking().Where(x=>x.BranchID == objBranch.BranchID).ToList();
+                    _posDbContext.BranchUserMapping.RemoveRange(lstBranchUserMapping);
 
                     _posDbContext.Branch.Remove(objBranch);
 
                     await _posDbContext.SaveChangesAsync();
 
-                    responseMessage.ResponseObj = null;
                     responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
                     responseMessage.Message = MessageConstant.DeleteSuccess;
                 }
@@ -171,15 +201,46 @@ namespace POS.Services
                         }
                         else
                         {
-                            //objBranch.Status = (int)Enums.Status.Active;
                             objBranch.CreatedDate = DateTime.Now;
                             objBranch.CreatedBy = requestMessage.UserID;
                             await _posDbContext.Branch.AddAsync(objBranch);
 
                         }
 
-                     
                         await _posDbContext.SaveChangesAsync();
+
+                       // BranchUserMapping update
+                            BranchUserMapping existBranchUserMapping = _posDbContext.BranchUserMapping
+                                    .AsNoTracking()
+                                    .Where(x => x.BranchID == objBranch.BranchID && x.SystemUserID == objBranch.BranchManagerID)
+                                    .FirstOrDefault();
+
+                        if (existBranchUserMapping != null)
+                        {
+                            _posDbContext.BranchUserMapping.Remove(existBranchUserMapping);
+                        }
+
+                        BranchUserMapping objBranchUserMapping = new BranchUserMapping();
+                        objBranchUserMapping.SystemUserID = objBranch.BranchManagerID;
+                        objBranchUserMapping.BranchID = objBranch.BranchID;
+                        objBranchUserMapping.IsManager = true;
+
+                        _posDbContext.BranchUserMapping.Add(objBranchUserMapping);
+                        await _posDbContext.SaveChangesAsync();
+
+
+                        List<int?> branchUserMappingIds = new List<int?>();
+
+                        branchUserMappingIds = _posDbContext.BranchUserMapping
+                                .AsNoTracking()
+                                .Where(x => x.BranchID == objBranch.BranchID)
+                                .Select(x => x.SystemUserID)
+                                .ToList();
+
+                        objBranch.lstAssignedUser = _posDbContext.SystemUser
+                                .AsNoTracking()
+                                .Where(x => branchUserMappingIds!.Contains(x.SystemUserID)).ToList();
+
 
                         responseMessage.ResponseObj = objBranch;
                         responseMessage.Message = MessageConstant.SavedSuccessfully;
@@ -211,6 +272,86 @@ namespace POS.Services
             return responseMessage;
         }
 
+        public async Task<ResponseMessage> AssignUserToBranch(RequestMessage requestMessage)
+        {
+            ResponseMessage responseMessage = new ResponseMessage();
+            try
+            {
+                if (requestMessage?.RequestObj == null)
+                {
+                    responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                    responseMessage.Message = "Invalid request";
+                    return responseMessage;
+                }
+
+                BranchUserMapping objBranchUserMapping = JsonConvert.DeserializeObject<BranchUserMapping>(requestMessage?.RequestObj.ToString());
+
+                if (objBranchUserMapping != null)
+                {
+                    BranchUserMapping exist = _posDbContext.BranchUserMapping.AsNoTracking().Where(x => x.BranchID == objBranchUserMapping.BranchID && x.SystemUserID == objBranchUserMapping.SystemUserID).FirstOrDefault();
+                    if (exist == null)
+                    {
+                        await _posDbContext.AddAsync(objBranchUserMapping);
+                        await _posDbContext.SaveChangesAsync();
+                    }
+                    responseMessage.ResponseObj = objBranchUserMapping;
+                    responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
+                    responseMessage.Message = MessageConstant.SavedSuccessfully;
+                }
+
+                //Log write
+                LogHelper.WriteLog(requestMessage?.RequestObj, (int)Enums.ActionType.Insert, requestMessage.UserID, "AssignUserToBranch");
+            }
+            catch (Exception ex)
+            {
+                //Process excetion, Development mode show real exception and production mode will show custom exception.
+                responseMessage.Message = ExceptionHelper.ProcessException(ex, (int)Enums.ActionType.Insert, requestMessage.UserID, JsonConvert.SerializeObject(requestMessage.RequestObj), "AssignUserToBranch");
+                responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+            }
+
+            return responseMessage;
+        }
+
+        public async Task<ResponseMessage> RemoveUserFromBranch(RequestMessage requestMessage)
+        {
+            ResponseMessage responseMessage = new ResponseMessage();
+            try
+            {
+                if (requestMessage?.RequestObj == null)
+                {
+                    responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                    responseMessage.Message = "Invalid request";
+                    return responseMessage;
+                }
+
+                BranchUserMapping objBranchUserMapping = JsonConvert.DeserializeObject<BranchUserMapping>(requestMessage?.RequestObj.ToString());
+
+                if (objBranchUserMapping != null)
+                {
+                    BranchUserMapping exist = _posDbContext.BranchUserMapping.AsNoTracking().Where(x => x.BranchID == objBranchUserMapping.BranchID && x.SystemUserID == objBranchUserMapping.SystemUserID).FirstOrDefault();
+                    if (exist != null)
+                    {
+                        _posDbContext.Remove(exist);
+                        await _posDbContext.SaveChangesAsync();
+                    }
+                    responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
+                    responseMessage.Message = "Removed Successfully";
+                }
+
+
+                //Log write
+                LogHelper.WriteLog(requestMessage?.RequestObj, (int)Enums.ActionType.Insert, requestMessage.UserID, "RemoveUserFromBranch");
+            }
+            catch (Exception ex)
+            {
+                //Process excetion, Development mode show real exception and production mode will show custom exception.
+                responseMessage.Message = ExceptionHelper.ProcessException(ex, (int)Enums.ActionType.Insert, requestMessage.UserID, JsonConvert.SerializeObject(requestMessage.RequestObj), "RemoveUserFromBranch");
+                responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+            }
+
+            return responseMessage;
+        }
+
         /// <summary>
         /// validation check
         /// </summary>
@@ -228,7 +369,7 @@ namespace POS.Services
                 responseMessage.Message = "Branch name required";
                 return false;
             }
-            
+
             return true;
         }
     }
