@@ -53,7 +53,7 @@ namespace POS.Services
 
                     branch.lstAssignedUser = _posDbContext.SystemUser
                             .AsNoTracking()
-                            .Where(x=> branchUserMappingIds!.Contains(x.SystemUserID)).ToList();
+                            .Where(x => branchUserMappingIds!.Contains(x.SystemUserID)).ToList();
                 }
 
 
@@ -117,6 +117,51 @@ namespace POS.Services
             return responseMessage;
         }
 
+        /// <summary>
+        /// Get all the Branch by user id
+        /// </summary>
+        /// <param name="requestMessage"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<ResponseMessage> GetAllBranchByUserID(RequestMessage requestMessage)
+        {
+            ResponseMessage responseMessage = new ResponseMessage();
+            try
+            {
+                List<Branch> lstBranch = new List<Branch>();
+                int roleId = _posDbContext.SystemUser.AsNoTracking().Where(x => x.SystemUserID == requestMessage.UserID).Select(x => x.RoleID).FirstOrDefault();
+
+                lstBranch = await _posDbContext.Branch.AsNoTracking().Where(x => x.Status == (int)Enums.Status.Active).ToListAsync();
+                if (roleId != 1 && roleId != 2)
+                {
+
+                    List<int?> branchUserMappingIds = new List<int?>();
+
+                    branchUserMappingIds = _posDbContext.BranchUserMapping
+                            .AsNoTracking()
+                            .Where(x => x.SystemUserID == requestMessage.UserID)
+                            .Select(x => x.BranchID)
+                            .ToList();
+
+                    lstBranch = lstBranch.Where(x => branchUserMappingIds!.Contains(x.BranchID)).ToList();
+                }
+
+
+                responseMessage.ResponseObj = lstBranch;
+                responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
+
+                //Log write
+                LogHelper.WriteLog(requestMessage?.RequestObj, (int)Enums.ActionType.View, requestMessage.UserID, "GetAllBranchByUserID");
+            }
+            catch (Exception ex)
+            {
+                //Process excetion, Development mode show real exception and production mode will show custom exception.
+                responseMessage.Message = ExceptionHelper.ProcessException(ex, (int)Enums.ActionType.View, requestMessage.UserID, JsonConvert.SerializeObject(requestMessage.RequestObj), "GetAllBranchByUserID");
+                responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+            }
+
+            return responseMessage;
+        }
 
         /// <summary>
         /// 
@@ -137,7 +182,7 @@ namespace POS.Services
                 if (objBranch.BranchID > 0)
                 {
                     List<BranchUserMapping> lstBranchUserMapping = new List<BranchUserMapping>();
-                    lstBranchUserMapping=_posDbContext.BranchUserMapping.AsNoTracking().Where(x=>x.BranchID == objBranch.BranchID).ToList();
+                    lstBranchUserMapping = _posDbContext.BranchUserMapping.AsNoTracking().Where(x => x.BranchID == objBranch.BranchID).ToList();
                     _posDbContext.BranchUserMapping.RemoveRange(lstBranchUserMapping);
 
                     _posDbContext.Branch.Remove(objBranch);
@@ -209,11 +254,8 @@ namespace POS.Services
 
                         await _posDbContext.SaveChangesAsync();
 
-                       // BranchUserMapping update
-                            BranchUserMapping existBranchUserMapping = _posDbContext.BranchUserMapping
-                                    .AsNoTracking()
-                                    .Where(x => x.BranchID == objBranch.BranchID && x.SystemUserID == objBranch.BranchManagerID)
-                                    .FirstOrDefault();
+                        // BranchUserMapping update
+                        BranchUserMapping existBranchUserMapping = _posDbContext.BranchUserMapping.AsNoTracking().Where(x => x.BranchID == objBranch.BranchID && x.SystemUserID == objBranch.BranchManagerID).FirstOrDefault();
 
                         if (existBranchUserMapping != null)
                         {
@@ -272,6 +314,12 @@ namespace POS.Services
             return responseMessage;
         }
 
+        /// <summary>
+        /// Assign user to the bBranch
+        /// </summary>
+        /// <param name="requestMessage"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task<ResponseMessage> AssignUserToBranch(RequestMessage requestMessage)
         {
             ResponseMessage responseMessage = new ResponseMessage();
@@ -312,6 +360,12 @@ namespace POS.Services
             return responseMessage;
         }
 
+        /// <summary>
+        /// Remove user from the bBranch
+        /// </summary>
+        /// <param name="requestMessage"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task<ResponseMessage> RemoveUserFromBranch(RequestMessage requestMessage)
         {
             ResponseMessage responseMessage = new ResponseMessage();
@@ -340,12 +394,12 @@ namespace POS.Services
 
 
                 //Log write
-                LogHelper.WriteLog(requestMessage?.RequestObj, (int)Enums.ActionType.Insert, requestMessage.UserID, "RemoveUserFromBranch");
+                LogHelper.WriteLog(requestMessage?.RequestObj, (int)Enums.ActionType.Delete, requestMessage.UserID, "RemoveUserFromBranch");
             }
             catch (Exception ex)
             {
                 //Process excetion, Development mode show real exception and production mode will show custom exception.
-                responseMessage.Message = ExceptionHelper.ProcessException(ex, (int)Enums.ActionType.Insert, requestMessage.UserID, JsonConvert.SerializeObject(requestMessage.RequestObj), "RemoveUserFromBranch");
+                responseMessage.Message = ExceptionHelper.ProcessException(ex, (int)Enums.ActionType.Delete, requestMessage.UserID, JsonConvert.SerializeObject(requestMessage.RequestObj), "RemoveUserFromBranch");
                 responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
             }
 

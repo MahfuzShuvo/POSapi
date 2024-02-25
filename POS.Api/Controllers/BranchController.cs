@@ -52,5 +52,11 @@ namespace POS.API.Controllers
         {
             return await _BranchService.RemoveUserFromBranch(requestMessage);
         }
+        
+        [HttpPost("GetAllBranchByUserID")]
+        public async Task<ResponseMessage> GetAllBranchByUserID(RequestMessage requestMessage)
+        {
+            return await _BranchService.GetAllBranchByUserID(requestMessage);
+        }
     }
 }

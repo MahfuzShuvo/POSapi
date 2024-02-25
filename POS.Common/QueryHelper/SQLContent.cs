@@ -85,7 +85,7 @@ namespace POS.Common.QueryHelper
                 p.BrandID,
                 ISNULL(c.CategoryName, '') CategoryName, 
                 ISNULL(b.BrandName, '') BrandName, 
-                ISNULL(u.UnitName, '') UnitName
+                ISNULL(u.DisplayName, ISNULL(u.UnitName, '')) UnitName
             FROM dbo.Product AS p
             left JOIN dbo.Category AS c ON c.CategoryID = p.CategoryID 
             left JOIN dbo.Brand AS b ON b.BrandID = p.BrandID 
@@ -105,7 +105,7 @@ namespace POS.Common.QueryHelper
                 p.BrandID,
                 ISNULL(c.CategoryName, ''), 
                 ISNULL(b.BrandName, ''), 
-                ISNULL(u.UnitName, '')", branchID);
+                ISNULL(u.DisplayName, ISNULL(u.UnitName, ''))", branchID);
 
             return sql;
         }

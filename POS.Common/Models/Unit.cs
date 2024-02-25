@@ -10,5 +10,6 @@ namespace POS.Common.Models
     {
         public int UnitID { get; set; }
         public string UnitName { get; set; }
+        public string? DisplayName { get; set; }
     }
 }

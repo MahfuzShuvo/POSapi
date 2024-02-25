@@ -60,7 +60,7 @@ namespace POS.API.Auth
                                 objVMLogin.Token = (accessToken != null) ? accessToken.Token : String.Empty;
 
                                 objVMLogin.SystemUserID = 0;
-                                objVMLogin.RoleID = 0;
+                                //objVMLogin.RoleID = 0;
                                 objResponseMessage.ResponseObj = objVMLogin;
                                 objResponseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
                                 var options = new JsonSerializerOptions
