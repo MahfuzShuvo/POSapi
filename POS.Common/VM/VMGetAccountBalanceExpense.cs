@@ -10,9 +10,11 @@ namespace POS.Common.VM
     {
         public int AccountID { get; set; }
         public string? AccountTitle { get; set; }
-        public double? Balance { get; set; }
-        public double? Expense { get; set; }
+        //public double? Balance { get; set; }
+        public double? TotalSales { get; set; }
+        public double? TotalDeposit { get; set; }
         public double? CurrentBalance { get; set; }
+        public double? Expense { get; set; }
         public string? AccountNumber { get; set; }
         public string? Description { get; set; }
         public int? Status { get; set; }

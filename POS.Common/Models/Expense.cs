@@ -14,6 +14,7 @@ namespace POS.Common.Models
         public double Amount { get; set; }
         public int PurchaseID { get; set; } = 0;
         public int AccountID { get; set; }
+        public int BranchID { get; set; }
     }
 
 }

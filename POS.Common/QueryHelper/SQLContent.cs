@@ -109,5 +109,35 @@ namespace POS.Common.QueryHelper
 
             return sql;
         }
+
+        public static string GetAccountBalanceExpenseByBranchID(int branchID)
+        {
+            string sql = string.Format(@"SELECT a.AccountID, 
+                   a.AccountTitle,
+	               acs.TotalSales,
+	               acs.TotalDeposit,
+                   (COALESCE(acs.TotalBalance, 0) - COALESCE(e.TotalExpense, 0)) AS CurrentBalance,
+                   COALESCE(e.TotalExpense, 0) AS Expense, 
+                   a.AccountNumber, 
+                   a.Description, 
+                   a.Status 
+            FROM Account a 
+            LEFT JOIN (
+                SELECT AccountID, 
+                        SUM(Amount) AS TotalExpense
+                FROM Expense where BranchID={0}
+                GROUP BY AccountID
+            ) e ON a.AccountID = e.AccountID
+            LEFT JOIN (
+                SELECT AccountID, 
+                       SUM(CASE WHEN IsDeposit = 0 THEN InBalance ELSE 0 END) AS TotalSales,
+		               SUM(CASE WHEN IsDeposit = 1 THEN InBalance ELSE 0 END) AS TotalDeposit,
+		               SUM(InBalance) AS TotalBalance
+                FROM AccountStatement where BranchID={0}
+                GROUP BY AccountID
+            ) acs ON a.AccountID = acs.AccountID", branchID);
+
+            return sql;
+        }
     }
 }

@@ -36,10 +36,11 @@ namespace POS.Services
             try
             {
                 List<Expense> lstExpense = new List<Expense>();
+                int branchID = JsonConvert.DeserializeObject<int>(requestMessage?.RequestObj.ToString());
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
 
-                lstExpense = await _posDbContext.Expense.OrderBy(x => x.ExpenseID).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
+                lstExpense = await _posDbContext.Expense.Where(x=>x.BranchID == branchID).OrderBy(x => x.ExpenseID).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 responseMessage.TotalCount = lstExpense.Count;
 
 
@@ -204,6 +205,7 @@ namespace POS.Services
                         }
                         AccountStatement objAccountStatement = new AccountStatement();
                         objAccountStatement.ExpenseID = objExpense.ExpenseID;
+                        objAccountStatement.BranchID = objExpense.BranchID;
                         objAccountStatement.AccountID = objExpense.AccountID;
                         objAccountStatement.OutBalance = objExpense.Amount;
                         objAccountStatement.CreatedDate = DateTime.Now;

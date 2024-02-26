@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static POS.Common.Enums.Enums;
 using POS.Common.VM;
+using POS.Common.QueryHelper;
 
 namespace POS.Services
 {
@@ -38,13 +39,17 @@ namespace POS.Services
             {
                 List<Account> lstAccount = new List<Account>();
                 List<VMGetAccountBalanceExpense> lstAccountBalanceExpesne = new List<VMGetAccountBalanceExpense>();
+                int branchID = JsonConvert.DeserializeObject<int>(requestMessage?.RequestObj.ToString());
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
 
                 lstAccount = await _posDbContext.Account.OrderBy(x => x.AccountID).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 responseMessage.TotalCount = lstAccount.Count;
 
-                lstAccountBalanceExpesne = await _posDbContext.VMGetAccountBalanceExpense.Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
+                string sql = SQLContent.GetAccountBalanceExpenseByBranchID(branchID);
+                var lst = _posDbContext.VMGetAccountBalanceExpense.FromSqlRaw(sql);
+
+                lstAccountBalanceExpesne = lst.Skip(totalSkip).Take(requestMessage.PageRecordSize).ToList();
 
                 responseMessage.ResponseObj = lstAccountBalanceExpesne;
                 responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
@@ -224,6 +229,8 @@ namespace POS.Services
                     {
                         AccountStatement objAccountStatement = new AccountStatement();
                         objAccountStatement.AccountID = objAccount.AccountID;
+                        objAccountStatement.IsDeposit = true;
+                        objAccountStatement.BranchID=objAccount.BranchID;
                         objAccountStatement.InBalance = objAccount.Balance;
                         objAccountStatement.CreatedDate = DateTime.Now;
                         objAccountStatement.CreatedBy = requestMessage.UserID;
@@ -275,7 +282,7 @@ namespace POS.Services
                         SELECT ast.CreatedDate AS TransactionDate, ast.InBalance, ast.OutBalance,
                         (SELECT SUM(COALESCE(InBalance, 0) - COALESCE(OutBalance, 0))
                         FROM AccountStatement WHERE AccountID = ast.AccountID AND CreatedDate <= ast.CreatedDate) AS Balance
-                        FROM AccountStatement ast WHERE ast.AccountID = " + objAccount.AccountID + " ORDER BY ast.CreatedDate";
+                        FROM AccountStatement ast WHERE ast.AccountID = " + objAccount.AccountID + " and ast.BranchID = "+objAccount.BranchID+" ORDER BY ast.CreatedDate";
                     lstVMAccountStatement = await _posDbContext.VMAccountStatement.FromSqlRaw<VMAccountStatement>(query).ToListAsync();
                     var totalInBalance = lstVMAccountStatement.Sum(x => x.InBalance);
                     var totalOutBalance = lstVMAccountStatement.Sum(x => x.OutBalance);

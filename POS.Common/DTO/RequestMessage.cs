@@ -12,10 +12,5 @@ namespace POS.Common.DTO
         public int PageRecordSize { get; set; } = 0;
         public int PageNumber { get; set; } = 0;
         public int UserID { get; set; }
-
-        public static implicit operator string(RequestMessage v)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

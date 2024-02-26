@@ -703,12 +703,15 @@ namespace POS.Services
             try
             {
                 List<VMProduct> lstProduct = new List<VMProduct>();
-                string searchText = requestMessage.RequestObj.ToString();
+                VMProductSearch objSearch = JsonConvert.DeserializeObject<VMProductSearch>(requestMessage.RequestObj.ToString());
 
-                lstProduct = await _posDbContext.VMProduct.Where(x => x.Status == (int)Enums.Status.Active).ToListAsync();
+                string sql = SQLContent.GetAllProductByBranchID(objSearch.BranchID);
+                var lst = _posDbContext.VMProduct.FromSqlRaw(sql);
 
-                lstProduct = lstProduct.Where(x => x.ProductName.ToLower().Contains(searchText?.ToLower())
-                                                || x.SKU.ToLower().Contains(searchText?.ToLower())).ToList();
+
+                lstProduct = lst.Where(x => x.Status == (int)Enums.Status.Active 
+                                        && (x.ProductName.ToLower().Contains(objSearch.SearchText)
+                                        || x.SKU.ToLower().Contains(objSearch.SearchText))).ToList();
 
                 if (lstProduct.Count > 0)
                 {

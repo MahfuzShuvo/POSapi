@@ -101,7 +101,7 @@ namespace POS.Services
         }
 
         /// <summary>
-        /// Get puchase by sales ID
+        /// Get sales by sales ID
         /// </summary>
         /// <param name="requestMessage"></param>
         /// <returns></returns>
@@ -297,12 +297,12 @@ namespace POS.Services
                     {
                         foreach (var item in lstSalesProductMapping)
                         {
-                            Product objProduct = await _posDbContext.Product.AsNoTracking().Where(x => x.ProductID == item.ProductID).FirstOrDefaultAsync();
-                            if (objProduct != null)
+                            BranchProductMapping objBranchProductMapping = await _posDbContext.BranchProductMapping.AsNoTracking().Where(x => x.ProductID == item.ProductID && x.BranchID == existingSales.BranchID).FirstOrDefaultAsync();
+                            if (objBranchProductMapping != null)
                             {
-                                objProduct.Qty = (int)(objProduct.Qty + item.Qty);
-                                
-                                _posDbContext.Product.Update(objProduct);
+                                objBranchProductMapping.Quantity = (int)(objBranchProductMapping.Quantity + item.Qty);
+
+                                _posDbContext.BranchProductMapping.Update(objBranchProductMapping);
                             }
                             _posDbContext.SalesProductMapping.Remove(item);
                         }
@@ -361,8 +361,8 @@ namespace POS.Services
                 {
                     if (CheckedValidation(objSales, responseMessage))
                     {
-                        VMGetAccountBalanceExpense existAccount = await _posDbContext.VMGetAccountBalanceExpense.AsNoTracking().Where(x => x.AccountID == objSales.AccountID).FirstOrDefaultAsync();
-                        
+                        //VMGetAccountBalanceExpense existAccount = await _posDbContext.VMGetAccountBalanceExpense.AsNoTracking().Where(x => x.AccountID == objSales.AccountID).FirstOrDefaultAsync();
+
                         if (objSales.SalesID > 0)
                         {
                             Sales existingSales = await _posDbContext.Sales.AsNoTracking().FirstOrDefaultAsync(x => x.SalesID == objSales.SalesID);
@@ -411,6 +411,25 @@ namespace POS.Services
 
                                 if (existProduct != null)
                                 {
+                                    // update quantity of sale product
+                                    BranchProductMapping existBranchProductMapping = await _posDbContext.BranchProductMapping.AsNoTracking().Where(x => x.ProductID == existProduct.ProductID && x.BranchID == objSales.BranchID).FirstOrDefaultAsync();
+                                    if (existBranchProductMapping != null)
+                                    {
+                                        existBranchProductMapping.Quantity = (int)(existBranchProductMapping.Quantity - (product.Qty ?? 0));
+
+                                        _posDbContext.BranchProductMapping.Update(existBranchProductMapping);
+                                    }
+                                    else
+                                    {
+                                        Sales obj = _posDbContext.Sales.AsNoTracking().Where(s => s.SalesID == objSales.SalesID).FirstOrDefault();
+                                        _posDbContext.Sales.Remove(obj);
+                                        _posDbContext.SaveChanges();
+
+                                        responseMessage.ResponseCode = (int)Enums.ResponseCode.Warning;
+                                        responseMessage.Message = "Empty stock! Please check stock before sale";
+                                        return responseMessage;
+                                    }
+
                                     SalesProductMapping objSalesProductMapping = new SalesProductMapping();
                                     objSalesProductMapping.ProductID = existProduct.ProductID;
                                     objSalesProductMapping.UnitPrice = product.FinalPrice;
@@ -420,11 +439,7 @@ namespace POS.Services
 
                                     await _posDbContext.SalesProductMapping.AddAsync(objSalesProductMapping);
 
-                                    // update quantity of sale product
-                                    existProduct.Qty = (int)(existProduct.Qty - (product.Qty ?? 0));
-                                    
-                                    _posDbContext.Product.Update(existProduct);
-
+                                    //_posDbContext.Product.Update(existProduct);
                                 }
                             }
                             await _posDbContext.SaveChangesAsync();
@@ -441,6 +456,7 @@ namespace POS.Services
                         {
                             AccountStatement objAccountStatement = new AccountStatement();
                             objAccountStatement.SalesID = objSales.SalesID;
+                            objAccountStatement.BranchID = objSales.BranchID;
                             objAccountStatement.AccountID = (int)objSales.AccountID;
                             objAccountStatement.InBalance = (double)objSales.PayAmount;
                             objAccountStatement.CreatedDate = DateTime.Now;

@@ -298,13 +298,14 @@ namespace POS.Services
                     {
                         foreach (var item in lstPurchaseProductMapping)
                         {
-                            Product objProduct = await _posDbContext.Product.AsNoTracking().Where(x => x.ProductID == item.ProductID).FirstOrDefaultAsync();
-                            if (objProduct != null)
+                            BranchProductMapping objBranchProductMapping = await _posDbContext.BranchProductMapping.AsNoTracking().Where(x => x.ProductID == item.ProductID && x.BranchID == existingPurchase.BranchID).FirstOrDefaultAsync();
+                            if (objBranchProductMapping != null)
                             {
-                                objProduct.Qty = (int)(objProduct.Qty - item.Qty);
+                                objBranchProductMapping.Quantity = (int)(objBranchProductMapping.Quantity - item.Qty);
 
-                                _posDbContext.Product.Update(objProduct);
+                                _posDbContext.BranchProductMapping.Update(objBranchProductMapping);
                             }
+
                             _posDbContext.PurchaseProductMapping.Remove(item);
                         }
                     }
@@ -436,6 +437,25 @@ namespace POS.Services
 
                                 if (existProduct != null)
                                 {
+                                    // update quantity of purchased product
+                                    BranchProductMapping existBranchProductMapping = await _posDbContext.BranchProductMapping.AsNoTracking().Where(x => x.ProductID == existProduct.ProductID && x.BranchID == objPurchase.BranchID).FirstOrDefaultAsync();
+                                    if (existBranchProductMapping != null)
+                                    {
+                                        existBranchProductMapping.Quantity = (int)(existBranchProductMapping.Quantity + (product.Qty ?? 0));
+
+                                        _posDbContext.BranchProductMapping.Update(existBranchProductMapping);
+                                    }
+                                    else
+                                    {
+                                        BranchProductMapping objBranchProductMapping = new BranchProductMapping();
+                                        objBranchProductMapping.ProductID = existProduct.ProductID;
+                                        objBranchProductMapping.BranchID = objPurchase.BranchID;
+                                        objBranchProductMapping.Quantity = product.Qty ?? 0;
+
+                                        _posDbContext.BranchProductMapping.Add(objBranchProductMapping);
+                                    }
+
+
                                     PurchaseProductMapping objPurchaseProductMapping = new PurchaseProductMapping();
                                     objPurchaseProductMapping.ProductID = existProduct.ProductID;
                                     objPurchaseProductMapping.UnitPrice = product.PurchasePrice;
@@ -444,9 +464,6 @@ namespace POS.Services
                                     objPurchaseProductMapping.PurchaseID = objPurchase.PurchaseID;
 
                                     await _posDbContext.PurchaseProductMapping.AddAsync(objPurchaseProductMapping);
-
-                                    // update quantity of purchased product
-                                    existProduct.Qty = (int)(existProduct.Qty + (product.Qty ?? 0));
 
                                     _posDbContext.Product.Update(existProduct);
 
@@ -464,6 +481,7 @@ namespace POS.Services
                             if (existExpense != null)
                             {
                                 objExpense.AccountID = (int)objPurchase.PaymentType;
+                                objExpense.BranchID = objPurchase.BranchID;
                                 objExpense.Amount = (double)objPurchase.PaymentAmount;
                                 objExpense.Description = objPurchase.PaymentNote;
                                 objExpense.PurchaseID = existExpense.PurchaseID;
@@ -486,6 +504,7 @@ namespace POS.Services
                             else
                             {
                                 objExpense.AccountID = (int)objPurchase.PaymentType;
+                                objExpense.BranchID = objPurchase.BranchID;
                                 objExpense.Amount = (double)objPurchase.PaymentAmount;
                                 objExpense.Description = objPurchase.PaymentNote;
                                 objExpense.PurchaseID = objPurchase.PurchaseID;
@@ -500,6 +519,7 @@ namespace POS.Services
 
                             AccountStatement objAccountStatement = new AccountStatement();
                             objAccountStatement.ExpenseID = objExpense.ExpenseID;
+                            objAccountStatement.BranchID = objPurchase.BranchID;
                             objAccountStatement.AccountID = objExpense.AccountID;
                             objAccountStatement.OutBalance = objExpense.Amount;
                             objAccountStatement.CreatedDate = DateTime.Now;

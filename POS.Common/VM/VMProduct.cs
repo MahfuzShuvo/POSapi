@@ -27,4 +27,10 @@ namespace POS.Common.VM
         [NotMapped]
         public int BranchID { get; set; }
     }
+
+    public class VMProductSearch
+    {
+        public string SearchText { get; set; }
+        public int BranchID { get; set; }
+    }
 }

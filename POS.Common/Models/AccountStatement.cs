@@ -14,6 +14,8 @@ namespace POS.Common.Models
         public int ExpenseID { get; set; } = 0;
         public double InBalance { get; set; } = 0;
         public double OutBalance { get; set; } = 0;
+        public int BranchID { get; set; }
+        public bool IsDeposit { get; set; }=false;
         public int? CreatedBy { get; set; }
         public DateTime? CreatedDate { get; set; }
     }

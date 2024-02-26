@@ -22,7 +22,6 @@ namespace POS.Common.Models
         public int CategoryID { get; set; } = 0;
         public int BrandID { get; set; } = 0;
         public DateTime? ExpireDate { get; set; }
-        public int Qty { get; set; } = 1;
         public int MinQty { get; set; } = 0;
         public double Cost { get; set; } = 0;
         public double Price { get; set; } = 0;
