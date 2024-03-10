@@ -112,10 +112,11 @@ namespace POS.Services
             try
             {
                 List<VMSales> lstSales = new List<VMSales>();
+                int branchID = JsonConvert.DeserializeObject<int>(requestMessage?.RequestObj.ToString());
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
 
-                lstSales = await _posDbContext.VMSales.Where(x=> x.Status == (int)Enums.Status.Hold).OrderBy(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
+                lstSales = await _posDbContext.VMSales.Where(x=> x.Status == (int)Enums.Status.Hold && x.BranchID == branchID).OrderBy(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 responseMessage.TotalCount = lstSales.Count;
 
                 foreach (VMSales sales in lstSales)
