@@ -39,10 +39,11 @@ namespace POS.Services
             try
             {
                 List<VMPurchase> lstPurchase = new List<VMPurchase>();
+                int branchID = JsonConvert.DeserializeObject<int>(requestMessage?.RequestObj.ToString());
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
 
-                lstPurchase = await _posDbContext.VMPurchase.OrderBy(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
+                lstPurchase = await _posDbContext.VMPurchase.Where(x=>x.BranchID == branchID).OrderBy(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 responseMessage.TotalCount = lstPurchase.Count;
 
 
@@ -147,9 +148,11 @@ namespace POS.Services
                 List<PurchaseProductMapping> lstPurchaseProductMapping = new List<PurchaseProductMapping>();
                 List<Product> lstProduct = new List<Product>();
 
-                string purchaseCode = requestMessage?.RequestObj.ToString();
+                var payload = JsonConvert.DeserializeObject<VMPurchase>(requestMessage?.RequestObj.ToString());
+                string purchaseCode = payload.PurchaseCode;
+                int branchID = payload.BranchID;
 
-                objPurchase = await _posDbContext.Purchase.AsNoTracking().FirstOrDefaultAsync(x => x.PurchaseCode == purchaseCode);
+                objPurchase = await _posDbContext.Purchase.AsNoTracking().FirstOrDefaultAsync(x => x.PurchaseCode == purchaseCode && x.BranchID == branchID);
 
                 if (objPurchase != null)
                 {
@@ -217,10 +220,12 @@ namespace POS.Services
                 List<PurchaseProductMapping> lstPurchaseProductMapping = new List<PurchaseProductMapping>();
                 List<Product> lstProduct = new List<Product>();
 
-                string purchaseCode = requestMessage?.RequestObj.ToString();
+                var payload = JsonConvert.DeserializeObject<VMPurchase>(requestMessage?.RequestObj.ToString());
+                string purchaseCode = payload.PurchaseCode;
+                int branchID = payload.BranchID;
 
-                objPurchase = await _posDbContext.VMPurchase.AsNoTracking().FirstOrDefaultAsync(x => x.PurchaseCode == purchaseCode);
-                Purchase objPurchaseWithID = await _posDbContext.Purchase.AsNoTracking().FirstOrDefaultAsync(x => x.PurchaseCode == purchaseCode);
+                objPurchase = await _posDbContext.VMPurchase.AsNoTracking().FirstOrDefaultAsync(x => x.PurchaseCode == purchaseCode && x.BranchID == branchID);
+                Purchase objPurchaseWithID = await _posDbContext.Purchase.AsNoTracking().FirstOrDefaultAsync(x => x.PurchaseCode == purchaseCode && x.BranchID == branchID);
 
                 if (objPurchase != null && objPurchaseWithID != null)
                 {

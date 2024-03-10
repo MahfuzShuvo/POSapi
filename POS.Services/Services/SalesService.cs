@@ -39,10 +39,11 @@ namespace POS.Services
             try
             {
                 List<VMSales> lstSales = new List<VMSales>();
+                int branchID = JsonConvert.DeserializeObject<int>(requestMessage?.RequestObj.ToString());
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
 
-                lstSales = await _posDbContext.VMSales.OrderBy(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
+                lstSales = await _posDbContext.VMSales.Where(x=> x.BranchID == branchID && x.Status == (int)Enums.Status.Active).OrderBy(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 responseMessage.TotalCount = lstSales.Count;
 
                 foreach (VMSales sales in lstSales)
@@ -99,6 +100,78 @@ namespace POS.Services
 
             return responseMessage;
         }
+        
+        /// <summary>
+        /// Get all Sales
+        /// </summary>
+        /// <param name="requestMessage"></param>
+        /// <returns></returns>
+        public async Task<ResponseMessage> GetAllHoldSales(RequestMessage requestMessage)
+        {
+            ResponseMessage responseMessage = new ResponseMessage();
+            try
+            {
+                List<VMSales> lstSales = new List<VMSales>();
+                int totalSkip = 0;
+                totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
+
+                lstSales = await _posDbContext.VMSales.Where(x=> x.Status == (int)Enums.Status.Hold).OrderBy(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
+                responseMessage.TotalCount = lstSales.Count;
+
+                foreach (VMSales sales in lstSales)
+                {
+                    Sales objSales = _posDbContext.Sales.AsNoTracking().Where(x => x.SalesCode == sales.SalesCode).FirstOrDefault();
+                    if (objSales != null)
+                    {
+                        List<SalesProductMapping> lstSalesProductMapping = await _posDbContext.SalesProductMapping.Where(x => x.SalesID == objSales.SalesID).ToListAsync();
+                        if (lstSalesProductMapping.Count > 0)
+                        {
+                            List<Product> lstProduct = new List<Product>();
+
+                            lstProduct = await _posDbContext.Product.Where(p =>
+                                        lstSalesProductMapping.Select(spm => spm.ProductID).Contains(p.ProductID)).ToListAsync();
+                            if (lstProduct.Count > 0)
+                            {
+                                foreach (Product objProduct in lstProduct)
+                                {
+                                    VMProduct product = new VMProduct();
+                                    product = JsonConvert.DeserializeObject<VMProduct>(JsonConvert.SerializeObject(objProduct));
+
+
+                                    if (product != null)
+                                    {
+                                        if (!string.IsNullOrEmpty(product.Image))
+                                        {
+                                            string getshowurl = _configuration.GetSection("attachments").GetSection("showfilepath").Value;
+                                            product.Image = getshowurl + product.Image;
+                                        }
+                                        sales.lstProduct.Add(product);
+                                    }
+
+                                }
+                            }
+                        }
+
+                    }
+
+                }
+
+
+                responseMessage.ResponseObj = lstSales;
+                responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
+
+                //Log write
+                LogHelper.WriteLog(requestMessage?.RequestObj, (int)Enums.ActionType.View, requestMessage.UserID, "GetAllHoldSales");
+            }
+            catch (Exception ex)
+            {
+                //Process excetion, Development mode show real exception and production mode will show custom exception.
+                responseMessage.Message = ExceptionHelper.ProcessException(ex, (int)Enums.ActionType.View, requestMessage.UserID, JsonConvert.SerializeObject(requestMessage.RequestObj), "GetAllHoldSales");
+                responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+            }
+
+            return responseMessage;
+        }
 
         /// <summary>
         /// Get sales by sales ID
@@ -146,9 +219,12 @@ namespace POS.Services
                 List<SalesProductMapping> lstSalesProductMapping = new List<SalesProductMapping>();
                 List<Product> lstProduct = new List<Product>();
 
-                string salesCode = requestMessage?.RequestObj.ToString();
+                var payload = JsonConvert.DeserializeObject<VMSales>(requestMessage?.RequestObj.ToString());
+                string salesCode = payload.SalesCode;
+                int branchID = payload.BranchID;
 
-                objSales = await _posDbContext.Sales.AsNoTracking().FirstOrDefaultAsync(x => x.SalesCode == salesCode);
+
+                objSales = await _posDbContext.Sales.AsNoTracking().FirstOrDefaultAsync(x => x.SalesCode == salesCode && x.BranchID == branchID);
 
                 if (objSales != null)
                 {
@@ -216,10 +292,12 @@ namespace POS.Services
                 List<SalesProductMapping> lstSalesProductMapping = new List<SalesProductMapping>();
                 List<Product> lstProduct = new List<Product>();
 
-                string salesCode = requestMessage?.RequestObj.ToString();
+                var payload = JsonConvert.DeserializeObject<VMSales>(requestMessage?.RequestObj.ToString());
+                string salesCode = payload.SalesCode;
+                int branchID = payload.BranchID;
 
-                objSales = await _posDbContext.VMSales.AsNoTracking().FirstOrDefaultAsync(x => x.SalesCode == salesCode);
-                Sales objSalesWithID = await _posDbContext.Sales.AsNoTracking().FirstOrDefaultAsync(x => x.SalesCode == salesCode);
+                objSales = await _posDbContext.VMSales.AsNoTracking().FirstOrDefaultAsync(x => x.SalesCode == salesCode && x.BranchID ==branchID);
+                Sales objSalesWithID = await _posDbContext.Sales.AsNoTracking().FirstOrDefaultAsync(x => x.SalesCode == salesCode && x.BranchID == branchID);
 
                 if (objSales != null && objSalesWithID != null)
                 {
@@ -412,22 +490,26 @@ namespace POS.Services
                                 if (existProduct != null)
                                 {
                                     // update quantity of sale product
-                                    BranchProductMapping existBranchProductMapping = await _posDbContext.BranchProductMapping.AsNoTracking().Where(x => x.ProductID == existProduct.ProductID && x.BranchID == objSales.BranchID).FirstOrDefaultAsync();
-                                    if (existBranchProductMapping != null)
+                                    if (objSales.Status == (int)Enums.Status.Active)
                                     {
-                                        existBranchProductMapping.Quantity = (int)(existBranchProductMapping.Quantity - (product.Qty ?? 0));
 
-                                        _posDbContext.BranchProductMapping.Update(existBranchProductMapping);
-                                    }
-                                    else
-                                    {
-                                        Sales obj = _posDbContext.Sales.AsNoTracking().Where(s => s.SalesID == objSales.SalesID).FirstOrDefault();
-                                        _posDbContext.Sales.Remove(obj);
-                                        _posDbContext.SaveChanges();
+                                        BranchProductMapping existBranchProductMapping = await _posDbContext.BranchProductMapping.AsNoTracking().Where(x => x.ProductID == existProduct.ProductID && x.BranchID == objSales.BranchID).FirstOrDefaultAsync();
+                                        if (existBranchProductMapping != null)
+                                        {
+                                            existBranchProductMapping.Quantity = (int)(existBranchProductMapping.Quantity - (product.Qty ?? 0));
 
-                                        responseMessage.ResponseCode = (int)Enums.ResponseCode.Warning;
-                                        responseMessage.Message = "Empty stock! Please check stock before sale";
-                                        return responseMessage;
+                                            _posDbContext.BranchProductMapping.Update(existBranchProductMapping);
+                                        }
+                                        else
+                                        {
+                                            Sales obj = _posDbContext.Sales.AsNoTracking().Where(s => s.SalesID == objSales.SalesID).FirstOrDefault();
+                                            _posDbContext.Sales.Remove(obj);
+                                            _posDbContext.SaveChanges();
+
+                                            responseMessage.ResponseCode = (int)Enums.ResponseCode.Warning;
+                                            responseMessage.Message = "Empty stock! Please check stock before sale";
+                                            return responseMessage;
+                                        }
                                     }
 
                                     SalesProductMapping objSalesProductMapping = new SalesProductMapping();
@@ -452,7 +534,7 @@ namespace POS.Services
                             _posDbContext.Remove(existingStatement);
                         }
                         // payment added in the DB
-                        if (objSales.PayAmount > 0 && objSales.AccountID > 0)
+                        if (objSales.PayAmount > 0 && objSales.AccountID > 0 && objSales.Status == (int)Enums.Status.Active)
                         {
                             AccountStatement objAccountStatement = new AccountStatement();
                             objAccountStatement.SalesID = objSales.SalesID;

@@ -13,11 +13,11 @@ namespace POS.Services.Interface
     public interface ISalesService
     {
         Task<ResponseMessage> GetAllSales(RequestMessage requestMessage);
+        Task<ResponseMessage> GetAllHoldSales(RequestMessage requestMessage);
         Task<ResponseMessage> SaveSales(RequestMessage requestMessage);
         Task<ResponseMessage> GetSalesById(RequestMessage requestMessage);
         Task<ResponseMessage> GetSalesBySalesCode(RequestMessage requestMessage);
         Task<ResponseMessage> GetSalesBySalesCodeForView(RequestMessage requestMessage);
         Task<ResponseMessage> DeleteSales(RequestMessage requestMessage);
-
     }
 }

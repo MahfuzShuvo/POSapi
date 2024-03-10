@@ -12,6 +12,7 @@ namespace POS.Common.VM
     {
         public string SalesCode { get; set; }
         public DateTime? SalesDate { get; set; }
+        public int BranchID { get; set; }
         public double? SubTotal { get; set; }
         public double? TotalSalesPrice { get; set; }
         public string DiscountType { get; set; }
@@ -24,6 +25,7 @@ namespace POS.Common.VM
         public DateTime? CreatedDate { get; set; }
         public string CustomerName { get; set; }
         public string CreatedByName { get; set; }
+        public int? Status { get; set; }
         [NotMapped]
         public List<VMProduct> lstProduct { get; set; } = new List<VMProduct>();
         [NotMapped]

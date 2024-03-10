@@ -12,6 +12,7 @@ namespace POS.Common.Enums
         {
             Active = 1,
             Inactive = 2,
+            Hold = 3,
             Delete = 9
         }
         public enum ResponseCode

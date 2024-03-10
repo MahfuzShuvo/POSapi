@@ -22,6 +22,12 @@ namespace POS.API.Controllers
         {
             return await _salesService.GetAllSales(requestMessage);
         }
+        
+        [HttpPost("GetAllHoldSales")]
+        public async Task<ResponseMessage> GetAllHoldSales(RequestMessage requestMessage)
+        {
+            return await _salesService.GetAllHoldSales(requestMessage);
+        }
 
         [HttpPost("GetSalesById")]
         public async Task<ResponseMessage> GetSalesById(RequestMessage requestMessage)

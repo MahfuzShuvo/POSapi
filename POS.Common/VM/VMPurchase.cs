@@ -10,8 +10,10 @@ namespace POS.Common.VM
 {
     public class VMPurchase
     {
+
         public string PurchaseCode { get; set; }
         public DateTime? PurchaseDate { get; set; }
+        public int BranchID { get; set; }
         //public string? ProductSKUs { get; set; }
         public double? SubTotal { get; set; }
         public double? TotalPurchasePrice { get; set; }
