@@ -24,7 +24,7 @@ namespace POS.DataAccess
         public virtual DbSet<Customer> Customer { get; set; }
         public virtual DbSet<Expense> Expense { get; set; }
         public virtual DbSet<Invoice> Invoice { get; set; }
-        public virtual DbSet<PaymentStatus> PaymentStatuse { get; set; }
+        public virtual DbSet<Coupon> Coupon { get; set; }
         public virtual DbSet<Product> Product { get; set; }
         public virtual DbSet<Purchase> Purchase { get; set; }
         public virtual DbSet<PurchaseProductMapping> PurchaseProductMapping { get; set; }
@@ -91,10 +91,10 @@ namespace POS.DataAccess
                 entity.HasKey(x => x.InvoiceID);
                 entity.ToTable("Invoice");
             });
-            modelBuilder.Entity<PaymentStatus>(entity =>
+            modelBuilder.Entity<Coupon>(entity =>
             {
-                entity.HasKey(x => x.PaymentStatusID);
-                entity.ToTable("PaymentStatus");
+                entity.HasKey(x => x.CouponID);
+                entity.ToTable("Coupon");
             });
             modelBuilder.Entity<Product>(entity =>
             {

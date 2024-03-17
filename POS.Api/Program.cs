@@ -104,6 +104,7 @@ builder.Services.AddScoped<ISalesService, SalesService>();
 builder.Services.AddScoped<IUnitService, UnitService>();
 builder.Services.AddScoped<IBranchService, BranchService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<ICouponService, CouponService>();
 
 
 /*-------------Service register area-------END-----*/

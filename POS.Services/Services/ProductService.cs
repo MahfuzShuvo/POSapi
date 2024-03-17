@@ -387,7 +387,10 @@ namespace POS.Services
                         {
                             objProduct.Image = !string.IsNullOrEmpty(objProduct.Image) ? objProduct.Image.Replace(showFilePath, "") : CommonConstant.NoImage;
                         }
-
+                        if (!string.IsNullOrEmpty(objProduct.ExpireDateString))
+                        {
+                                objProduct.ExpireDate = Convert.ToDateTime(objProduct.ExpireDateString);
+                        }
                         if (!string.IsNullOrEmpty(objProduct.SKU))
                         {
                             Product existingProduct = await this._posDbContext.Product.AsNoTracking().FirstOrDefaultAsync(x => x.SKU == objProduct.SKU);

@@ -13,6 +13,8 @@ namespace POS.Common.Models
         public int PurchaseID { get; set; }
         public string? PurchaseCode { get; set; }
         public DateTime PurchaseDate { get; set; } = DateTime.UtcNow;
+        [NotMapped]
+        public string? PurchaseDateString { get; set; }
         public int? PurchaseStatus { get; set; }
         public int BranchID { get; set; }
         public int? SupplierID { get; set; }

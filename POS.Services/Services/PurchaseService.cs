@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using POS.Common.VM;
 using Microsoft.Extensions.Configuration;
+using POS.Common.QueryHelper;
 
 namespace POS.Services
 {
@@ -43,7 +44,7 @@ namespace POS.Services
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
 
-                lstPurchase = await _posDbContext.VMPurchase.Where(x=>x.BranchID == branchID).OrderBy(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
+                lstPurchase = await _posDbContext.VMPurchase.Where(x=>x.BranchID == branchID).OrderByDescending(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 responseMessage.TotalCount = lstPurchase.Count;
 
 
@@ -374,8 +375,10 @@ namespace POS.Services
                     {
                         if (objPurchase.PaymentAmount > 0)
                         {
+                            string sql = SQLContent.GetAccountBalanceExpenseByBranchID(objPurchase.BranchID);
+                            var lst = _posDbContext.VMGetAccountBalanceExpense.FromSqlRaw(sql).ToList();
 
-                            VMGetAccountBalanceExpense existAccount = await _posDbContext.VMGetAccountBalanceExpense.AsNoTracking().Where(x => x.AccountID == objPurchase.PaymentType).FirstOrDefaultAsync();
+                            VMGetAccountBalanceExpense existAccount = lst.Where(x => x.AccountID == objPurchase.PaymentType).FirstOrDefault();
                             if (existAccount != null)
                             {
                                 if (existAccount.CurrentBalance <= objPurchase.PaymentAmount)
@@ -392,6 +395,8 @@ namespace POS.Services
                                 return responseMessage;
                             }
                         }
+
+                        objPurchase.PurchaseDate = Convert.ToDateTime(objPurchase.PurchaseDateString);
 
                         if (objPurchase.PurchaseID > 0)
                         {
