@@ -43,8 +43,10 @@ namespace POS.Services
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
 
-                lstSales = await _posDbContext.VMSales.Where(x=> x.BranchID == branchID && x.Status == (int)Enums.Status.Active).OrderBy(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
+                lstSales = _posDbContext.VMSales.Where(x => x.BranchID == branchID && x.Status == (int)Enums.Status.Active).ToList();
                 responseMessage.TotalCount = lstSales.Count;
+
+                lstSales = lstSales.OrderBy(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToList();
 
                 foreach (VMSales sales in lstSales)
                 {
@@ -100,7 +102,101 @@ namespace POS.Services
 
             return responseMessage;
         }
-        
+
+        /// <summary>
+        /// Get Sales for export
+        /// </summary>
+        /// <param name="requestMessage"></param>
+        /// <returns></returns>
+        public async Task<ResponseMessage> GetSaleForExport(RequestMessage requestMessage)
+        {
+            ResponseMessage responseMessage = new ResponseMessage();
+            try
+            {
+                List<VMSales> lstSales = new List<VMSales>();
+                ExportCSV reqExportCSV = JsonConvert.DeserializeObject<ExportCSV>(requestMessage?.RequestObj.ToString());
+
+                if (reqExportCSV is null)
+                {
+                    responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                    responseMessage.Message = "Invalid request";
+                    return responseMessage;
+                }
+
+
+
+                lstSales = await _posDbContext.VMSales.Where(x => x.BranchID == reqExportCSV.BranchID && x.Status == (int)Enums.Status.Active).OrderBy(x => x.CreatedDate).ToListAsync();
+
+                if (!string.IsNullOrEmpty(reqExportCSV.StartDate) && !string.IsNullOrEmpty(reqExportCSV.EndDate))
+                {
+                    DateTime FromDate = Convert.ToDateTime(reqExportCSV.StartDate);
+                    DateTime ToDate = Convert.ToDateTime(reqExportCSV.EndDate);
+
+                    lstSales = lstSales.Where(x => x.SalesDate >= FromDate && x.SalesDate <= ToDate).ToList();
+                }
+
+                responseMessage.TotalCount = lstSales.Count;
+
+                // edit required .... \/
+                foreach (VMSales sales in lstSales)
+                {
+                    sales.BranchName = _posDbContext.Branch.AsNoTracking().Where(x => x.BranchID == sales.BranchID).FirstOrDefault()?.BranchName;
+
+                    Sales objSales = _posDbContext.Sales.AsNoTracking().Where(x => x.SalesCode == sales.SalesCode).FirstOrDefault();
+                    if (objSales != null)
+                    {
+                        List<SalesProductMapping> lstSalesProductMapping = await _posDbContext.SalesProductMapping.Where(x => x.SalesID == objSales.SalesID).ToListAsync();
+                        if (lstSalesProductMapping.Count > 0)
+                        {
+                            List<Product> lstProduct = new List<Product>();
+
+                            lstProduct = await _posDbContext.Product.Where(p =>
+                                        lstSalesProductMapping.Select(spm => spm.ProductID).Contains(p.ProductID)).ToListAsync();
+                            if (lstProduct.Count > 0)
+                            {
+                                //foreach (Product objProduct in lstProduct)
+                                //{
+                                //    VMProduct product = new VMProduct();
+                                //    product = JsonConvert.DeserializeObject<VMProduct>(JsonConvert.SerializeObject(objProduct));
+
+
+                                //    if (product != null)
+                                //    {
+                                //        if (!string.IsNullOrEmpty(product.Image))
+                                //        {
+                                //            string getshowurl = _configuration.GetSection("attachments").GetSection("showfilepath").Value;
+                                //            product.Image = getshowurl + product.Image;
+                                //        }
+                                //        sales.lstProduct.Add(product);
+                                //    }
+
+                                //}
+                                sales.ListofProductName=string.Join(",", lstProduct.Select(p=>p.ProductName));
+
+                            }
+                        }
+
+                    }
+
+                }
+
+
+                responseMessage.ResponseObj = lstSales;
+                responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
+
+                //Log write
+                LogHelper.WriteLog(requestMessage?.RequestObj, (int)Enums.ActionType.View, requestMessage.UserID, "GetSaleForExport");
+            }
+            catch (Exception ex)
+            {
+                //Process excetion, Development mode show real exception and production mode will show custom exception.
+                responseMessage.Message = ExceptionHelper.ProcessException(ex, (int)Enums.ActionType.View, requestMessage.UserID, JsonConvert.SerializeObject(requestMessage.RequestObj), "GetSaleForExport");
+                responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+            }
+
+            return responseMessage;
+        }
+
         /// <summary>
         /// Get all Sales
         /// </summary>
@@ -116,7 +212,7 @@ namespace POS.Services
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
 
-                lstSales = await _posDbContext.VMSales.Where(x=> x.Status == (int)Enums.Status.Hold && x.BranchID == branchID).OrderBy(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
+                lstSales = await _posDbContext.VMSales.Where(x => x.Status == (int)Enums.Status.Hold && x.BranchID == branchID).OrderBy(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 responseMessage.TotalCount = lstSales.Count;
 
                 foreach (VMSales sales in lstSales)
@@ -297,7 +393,7 @@ namespace POS.Services
                 string salesCode = payload.SalesCode;
                 int branchID = payload.BranchID;
 
-                objSales = await _posDbContext.VMSales.AsNoTracking().FirstOrDefaultAsync(x => x.SalesCode == salesCode && x.BranchID ==branchID);
+                objSales = await _posDbContext.VMSales.AsNoTracking().FirstOrDefaultAsync(x => x.SalesCode == salesCode && x.BranchID == branchID);
                 Sales objSalesWithID = await _posDbContext.Sales.AsNoTracking().FirstOrDefaultAsync(x => x.SalesCode == salesCode && x.BranchID == branchID);
 
                 if (objSales != null && objSalesWithID != null)

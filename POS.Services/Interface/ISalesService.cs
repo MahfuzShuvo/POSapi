@@ -19,5 +19,6 @@ namespace POS.Services.Interface
         Task<ResponseMessage> GetSalesBySalesCode(RequestMessage requestMessage);
         Task<ResponseMessage> GetSalesBySalesCodeForView(RequestMessage requestMessage);
         Task<ResponseMessage> DeleteSales(RequestMessage requestMessage);
+        Task<ResponseMessage> GetSaleForExport(RequestMessage requestMessage);
     }
 }

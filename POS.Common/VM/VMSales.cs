@@ -27,8 +27,13 @@ namespace POS.Common.VM
         public string CreatedByName { get; set; }
         public int? Status { get; set; }
         [NotMapped]
+        public string? BranchName { get; set; }
+        [NotMapped]
+        public string ListofProductName { get; set; } = string.Empty;
+        [NotMapped]
         public List<VMProduct> lstProduct { get; set; } = new List<VMProduct>();
         [NotMapped]
         public Customer objCustomer { get; set; } = new Customer();
     }
+
 }
