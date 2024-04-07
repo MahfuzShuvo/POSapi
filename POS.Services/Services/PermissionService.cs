@@ -38,7 +38,7 @@ namespace POS.Services.Services
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
 
-                lstPermission = await _posDbContext.Permission.OrderBy(x => x.PermissionID).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
+                lstPermission = await _posDbContext.Permission.OrderBy(x => x.Sequence).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 responseMessage.TotalCount = lstPermission.Count;
 
 
@@ -174,6 +174,9 @@ namespace POS.Services.Services
                     }
                     else
                     {
+                        int maxSequence = await _posDbContext.Permission.MaxAsync(x => x.Sequence);
+                        objPermission.Sequence = maxSequence + 1;
+
                         //objPermission.Status = (int)Enums.Status.Active;
                         objPermission.CreatedDate = DateTime.Now;
                         objPermission.CreatedBy = requestMessage.UserID;
@@ -190,6 +193,65 @@ namespace POS.Services.Services
 
                     //Log write
                     LogHelper.WriteLog(requestMessage.RequestObj, actionType, requestMessage.UserID, "SavePermission");
+                }
+                else
+                {
+                    responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                    responseMessage.Message = MessageConstant.SaveFailed;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                //Process excetion, Development mode show real exception and production mode will show custom exception.
+                responseMessage.Message = ExceptionHelper.ProcessException(ex, actionType, requestMessage.UserID, JsonConvert.SerializeObject(requestMessage.RequestObj), "SavePermission");
+                responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+
+            }
+
+            return responseMessage;
+        }
+
+
+        /// <summary>
+        /// re sequence the permissions
+        /// </summary>
+        /// <param name="requestMessage"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task<ResponseMessage> SequencePermissions(RequestMessage requestMessage)
+        {
+            ResponseMessage responseMessage = new ResponseMessage();
+            int actionType = (int)Enums.ActionType.Insert;
+            try
+            {
+                List<Permission> lstPermission = JsonConvert.DeserializeObject<List<Permission>>(requestMessage?.RequestObj.ToString());
+                List<Permission> lstSequencialPermission = new List<Permission>();
+
+                if (lstPermission.Count > 0)
+                {
+                    foreach (Permission objPermission in lstPermission)
+                    {
+                        Permission existingPermission = await _posDbContext.Permission.AsNoTracking().
+                            FirstOrDefaultAsync(x => x.PermissionID == objPermission.PermissionID && x.Status != (int)Enums.Status.Delete);
+
+                        if (existingPermission != null)
+                        {
+                            actionType = (int)Enums.ActionType.Update;
+                            objPermission.CreatedDate = existingPermission.CreatedDate;
+                            objPermission.CreatedBy = existingPermission.CreatedBy;
+                            objPermission.UpdatedDate = DateTime.Now;
+                            objPermission.UpdatedBy = requestMessage.UserID;
+                            _posDbContext.Permission.Update(objPermission);
+                        }
+                    }
+                    await _posDbContext.SaveChangesAsync();
+
+                    lstSequencialPermission = await _posDbContext.Permission.Where(x => x.Sequence != 0 && x.Status != (int)Enums.Status.Delete).OrderBy(x => x.Sequence).ToListAsync();
+
+                    responseMessage.ResponseObj = lstSequencialPermission;
+                    responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
+                    responseMessage.Message = MessageConstant.SavedSuccessfully;
                 }
                 else
                 {

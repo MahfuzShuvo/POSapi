@@ -38,5 +38,11 @@ namespace POS.Api.Controllers
         {
             return await _permissionService.DeletePermission(requestMessage);
         }
+        
+        [HttpPost("SequencePermissions")]
+        public async Task<ResponseMessage> SequencePermissions(RequestMessage requestMessage)
+        {
+            return await _permissionService.SequencePermissions(requestMessage);
+        }
     }
 }

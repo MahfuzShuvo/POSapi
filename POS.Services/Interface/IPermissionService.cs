@@ -13,5 +13,6 @@ namespace POS.Services.Interface
         Task<ResponseMessage> GetPermissionById(RequestMessage requestMessage);
         Task<ResponseMessage> SavePermission(RequestMessage requestMessage);
         Task<ResponseMessage> DeletePermission(RequestMessage requestMessage);
+        Task<ResponseMessage> SequencePermissions(RequestMessage requestMessage);
     }
 }

@@ -137,7 +137,6 @@ namespace POS.Services
 
                 responseMessage.TotalCount = lstSales.Count;
 
-                // edit required .... \/
                 foreach (VMSales sales in lstSales)
                 {
                     sales.BranchName = _posDbContext.Branch.AsNoTracking().Where(x => x.BranchID == sales.BranchID).FirstOrDefault()?.BranchName;

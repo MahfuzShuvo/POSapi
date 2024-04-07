@@ -86,7 +86,7 @@ namespace POS.Services.Services
                 {
                     if (objVMLogin.RoleID == 1)
                     {
-                        lstPermission = _posDbContext.Permission.ToList();
+                        lstPermission = _posDbContext.Permission.OrderBy(x => x.Sequence).ToList();
                     }
                     else
                     {

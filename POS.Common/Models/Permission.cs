@@ -11,5 +11,7 @@ namespace POS.Common.Models
         public int PermissionID { get; set; }
         public string PermissionName { get; set; }
         public string DisplayName { get; set; }
+        public string? Icon { get; set; }
+        public int Sequence { get; set; }
     }
 }
