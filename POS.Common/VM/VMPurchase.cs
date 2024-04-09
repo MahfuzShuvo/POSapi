@@ -30,6 +30,10 @@ namespace POS.Common.VM
         public string SupplierName { get; set; }
         public string CreatedByName { get; set; }
         [NotMapped]
+        public string? BranchName { get; set; }
+        [NotMapped]
+        public string ListofProductName { get; set; } = string.Empty;
+        [NotMapped]
         public List<VMProduct> lstProduct { get; set; } = new List<VMProduct>();
         [NotMapped]
         public Supplier objSupplier { get; set; } = new Supplier();

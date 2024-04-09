@@ -103,6 +103,89 @@ namespace POS.Services
             return responseMessage;
         }
 
+
+        /// <summary>
+        /// Get Purchase for export
+        /// </summary>
+        /// <param name="requestMessage"></param>
+        /// <returns></returns>
+        public async Task<ResponseMessage> GetPurchaseForExport(RequestMessage requestMessage)
+        {
+            ResponseMessage responseMessage = new ResponseMessage();
+            try
+            {
+                List<VMPurchase> lstPurchase = new List<VMPurchase>();
+                ExportCSV reqExportCSV = JsonConvert.DeserializeObject<ExportCSV>(requestMessage?.RequestObj.ToString());
+
+                if (reqExportCSV is null)
+                {
+                    responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+                    responseMessage.Message = "Invalid request";
+                    return responseMessage;
+                }
+
+                lstPurchase = await _posDbContext.VMPurchase.Where(x => x.BranchID == reqExportCSV.BranchID).OrderByDescending(x => x.CreatedDate).ToListAsync();
+                responseMessage.TotalCount = lstPurchase.Count;
+
+
+                foreach (VMPurchase purchase in lstPurchase)
+                {
+                    purchase.BranchName = _posDbContext.Branch.AsNoTracking().Where(x => x.BranchID == purchase.BranchID).FirstOrDefault()?.BranchName;
+
+                    Purchase objPurchase = _posDbContext.Purchase.AsNoTracking().Where(x => x.PurchaseCode == purchase.PurchaseCode).FirstOrDefault();
+                    if (objPurchase != null)
+                    {
+                        List<PurchaseProductMapping> lstPurchaseProductMapping = await _posDbContext.PurchaseProductMapping.Where(x => x.PurchaseID == objPurchase.PurchaseID).ToListAsync();
+                        if (lstPurchaseProductMapping.Count > 0)
+                        {
+                            List<Product> lstProduct = new List<Product>();
+
+                            lstProduct = await _posDbContext.Product.Where(p =>
+                                        lstPurchaseProductMapping.Select(ppm => ppm.ProductID).Contains(p.ProductID)).ToListAsync();
+                            if (lstProduct.Count > 0)
+                            {
+                                //foreach (Product objProduct in lstProduct)
+                                //{
+                                //    VMProduct product = new VMProduct();
+                                //    product = JsonConvert.DeserializeObject<VMProduct>(JsonConvert.SerializeObject(objProduct));
+
+
+                                //    if (product != null)
+                                //    {
+                                //        if (!string.IsNullOrEmpty(product.Image))
+                                //        {
+                                //            string getshowurl = _configuration.GetSection("attachments").GetSection("showfilepath").Value;
+                                //            product.Image = getshowurl + product.Image;
+                                //        }
+                                //        purchase.lstProduct.Add(product);
+                                //    }
+
+                                //}
+                                purchase.ListofProductName = string.Join(",", lstProduct.Select(p => p.ProductName));
+                            }
+                        }
+
+                    }
+
+                }
+
+
+                responseMessage.ResponseObj = lstPurchase;
+                responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
+
+                //Log write
+                LogHelper.WriteLog(requestMessage?.RequestObj, (int)Enums.ActionType.View, requestMessage.UserID, "GetPurchaseForExport");
+            }
+            catch (Exception ex)
+            {
+                //Process excetion, Development mode show real exception and production mode will show custom exception.
+                responseMessage.Message = ExceptionHelper.ProcessException(ex, (int)Enums.ActionType.View, requestMessage.UserID, JsonConvert.SerializeObject(requestMessage.RequestObj), "GetAllPurchase");
+                responseMessage.ResponseCode = (int)Enums.ResponseCode.Failed;
+            }
+
+            return responseMessage;
+        }
+
         /// <summary>
         /// Get puchase by purchase ID
         /// </summary>

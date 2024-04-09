@@ -51,6 +51,12 @@ namespace POS.API.Controllers
         public async Task<ResponseMessage> DeletePurchase(RequestMessage requestMessage)
         {
             return await _purchaseService.DeletePurchase(requestMessage);
+        } 
+        
+        [HttpPost("GetPurchaseForExport")]
+        public async Task<ResponseMessage> GetPurchaseForExport(RequestMessage requestMessage)
+        {
+            return await _purchaseService.GetPurchaseForExport(requestMessage);
         }
     }
 }
