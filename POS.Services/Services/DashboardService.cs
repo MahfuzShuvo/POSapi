@@ -39,15 +39,18 @@ namespace POS.Services
             try
             {
                 DateTime currentDate = DateTime.Now;
-                int monthNumber = JsonConvert.DeserializeObject<int>(requestMessage.RequestObj.ToString());
-                if (monthNumber == 0)
+
+                DashboardDTO objDashboard = JsonConvert.DeserializeObject<DashboardDTO>(requestMessage.RequestObj?.ToString());
+
+
+                if (objDashboard?.MonthNumber == 0)
                 {
-                    monthNumber = currentDate.Month;
+                    objDashboard.MonthNumber = currentDate.Month;
                 }
 
                 List<VMDashboardInitialData> lstVMDashboardInitialData = new List<VMDashboardInitialData>();
 
-                string sql = SQLContent.GetDashboardInitialDataQuery(monthNumber);
+                string sql = SQLContent.GetDashboardInitialDataQuery(objDashboard.MonthNumber, objDashboard.BranchID);
                 lstVMDashboardInitialData = _posDbContext.VMDashboardInitialData.FromSqlRaw(sql).ToList();
 
                 responseMessage.ResponseObj = lstVMDashboardInitialData;

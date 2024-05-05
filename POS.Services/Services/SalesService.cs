@@ -46,7 +46,7 @@ namespace POS.Services
                 lstSales = _posDbContext.VMSales.Where(x => x.BranchID == branchID && x.Status == (int)Enums.Status.Active).ToList();
                 responseMessage.TotalCount = lstSales.Count;
 
-                lstSales = lstSales.OrderBy(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToList();
+                lstSales = lstSales.OrderByDescending(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToList();
 
                 foreach (VMSales sales in lstSales)
                 {

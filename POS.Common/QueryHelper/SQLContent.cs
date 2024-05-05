@@ -8,7 +8,7 @@ namespace POS.Common.QueryHelper
 {
     public static class SQLContent
     {
-        public static string GetDashboardInitialDataQuery(int monthNumber)
+        public static string GetDashboardInitialDataQuery(int monthNumber, int branchID)
         {
             string sql = string.Format(@"WITH AllDays AS (
                 SELECT 1 AS DayNumber
@@ -24,7 +24,7 @@ namespace POS.Common.QueryHelper
                 FROM
                     Sales
                 WHERE
-                    YEAR(SalesDate) = YEAR(GETDATE())
+                    YEAR(SalesDate) = YEAR(GETDATE()) and BranchID = {1}
                 GROUP BY
                     DAY(SalesDate), MONTH(SalesDate)
             ),
@@ -35,7 +35,7 @@ namespace POS.Common.QueryHelper
                 FROM
                     Purchase
                 WHERE
-                    YEAR(PurchaseDate) = YEAR(GETDATE())
+                    YEAR(PurchaseDate) = YEAR(GETDATE()) and BranchID = {1}
                 GROUP BY
                     DAY(PurchaseDate), MONTH(PurchaseDate)
             ),
@@ -46,7 +46,7 @@ namespace POS.Common.QueryHelper
                 FROM
                     Expense
                 WHERE
-                    YEAR(CreatedDate) = YEAR(GETDATE())
+                    YEAR(CreatedDate) = YEAR(GETDATE()) and BranchID = {1}
                 GROUP BY
                     DAY(CreatedDate), MONTH(CreatedDate)
             )
@@ -63,7 +63,7 @@ namespace POS.Common.QueryHelper
             LEFT JOIN
                 PurchaseTotals PT ON AD.DayNumber = PT.DayID and PT.MonthID = {0}
             LEFT JOIN
-                ExpenseTotals ET ON AD.DayNumber = ET.DayID and ET.MonthID = {0}", monthNumber);
+                ExpenseTotals ET ON AD.DayNumber = ET.DayID and ET.MonthID = {0}", monthNumber, branchID);
 
             return sql;
         }

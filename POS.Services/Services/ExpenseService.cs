@@ -40,7 +40,7 @@ namespace POS.Services
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
 
-                lstExpense = await _posDbContext.Expense.Where(x=>x.BranchID == branchID).OrderBy(x => x.ExpenseID).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
+                lstExpense = await _posDbContext.Expense.Where(x=>x.BranchID == branchID).OrderByDescending(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 responseMessage.TotalCount = lstExpense.Count;
 
 
