@@ -68,7 +68,10 @@ builder.Services.AddSwaggerGen(c =>
 /*-------------Database connection--------*/
 builder.Services.AddDbContext<POSDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("CN"));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("CN"), 
+        options => options.MigrationsAssembly("POS.Api")
+    );
 });
 builder.Services.AddDbContext<POSAuditLogDbContext>(options =>
 {

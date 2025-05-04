@@ -30,58 +30,69 @@ namespace POS.Services
             UserSession userSession = new UserSession();
             string token = BuildToken(objAccessToken);
             objAccessToken.Token = token;
+            try
+            {
+
             UserSession existingUserSession = await _posDbContext.UserSession.Where(x => x.Token == token && x.Status == (int)Enums.Status.Active && x.SessionEnd > DateTime.Now).AsNoTracking().OrderByDescending(x => x.UserSessionID).FirstOrDefaultAsync();
 
-
-            if (existingUserSession != null && existingUserSession.UserSessionID > 0)
-            {
-                DateTime dateTime = DateTime.Now.AddMinutes(CommonConstant.SessionExpired);
-                existingUserSession.SessionEnd = dateTime;
-                _posDbContext.UserSession.Update(existingUserSession);
-
-                //set return session infomaiton 
-                objAccessToken.IssuedOn = existingUserSession.SessionStart;
-                objAccessToken.ExpiredOn = existingUserSession.SessionEnd;
-            }
-            else
-            {
-
-                //remove previously active session 
-                List<UserSession> lstAllPreviousSession = await _posDbContext.UserSession.Where(x => x.SystemUserID == objAccessToken.SystemUserID && x.Status == (int)Enums.Status.Active).AsNoTracking().OrderByDescending(x => x.UserSessionID).ToListAsync();
-                foreach (var item in lstAllPreviousSession)
+                if (existingUserSession != null && existingUserSession.UserSessionID > 0)
                 {
-                    item.Status = (int)Enums.Status.Inactive;
+                    DateTime dateTime = DateTime.Now.AddMinutes(CommonConstant.SessionExpired);
+                    existingUserSession.SessionEnd = dateTime;
+                    _posDbContext.UserSession.Update(existingUserSession);
+
+                    //set return session infomaiton 
+                    objAccessToken.IssuedOn = existingUserSession.SessionStart;
+                    objAccessToken.ExpiredOn = existingUserSession.SessionEnd;
                 }
-                _posDbContext.UserSession.UpdateRange(lstAllPreviousSession);
-                //----------------------//
-
-
-                userSession = new UserSession();
-                DateTime now = DateTime.Now;
-
-                // find device IP for security purpose
-                var host = Dns.GetHostEntry(Dns.GetHostName());
-                foreach (var ip in host.AddressList)
+                else
                 {
-                    if (ip.AddressFamily == AddressFamily.InterNetwork)
+
+                    //remove previously active session 
+                    List<UserSession> lstAllPreviousSession = await _posDbContext.UserSession.Where(x => x.SystemUserID == objAccessToken.SystemUserID && x.Status == (int)Enums.Status.Active).AsNoTracking().OrderByDescending(x => x.UserSessionID).ToListAsync();
+                    foreach (var item in lstAllPreviousSession)
                     {
-                        userSession.SessionIP = ip.ToString();
+                        item.Status = (int)Enums.Status.Inactive;
                     }
+                    _posDbContext.UserSession.UpdateRange(lstAllPreviousSession);
+                    //----------------------//
+
+
+                    userSession = new UserSession();
+                    DateTime now = DateTime.Now;
+
+                    // find device IP for security purpose
+                    var host = Dns.GetHostEntry(Dns.GetHostName());
+                    foreach (var ip in host.AddressList)
+                    {
+                        if (ip.AddressFamily == AddressFamily.InterNetwork)
+                        {
+                            userSession.SessionIP = ip.ToString();
+                        }
+                    }
+
+                    userSession.SessionStart = now;
+                    userSession.SessionEnd = now.AddMinutes(CommonConstant.SessionExpired);
+                    userSession.Token = token;
+                    userSession.RoleID = objAccessToken.RoleID;
+                    userSession.SystemUserID = objAccessToken.SystemUserID;
+                    userSession.Status = (int)Enums.Status.Active;
+                    await _posDbContext.UserSession.AddAsync(userSession);
+                    //set return session infomaiton 
+                    objAccessToken.IssuedOn = userSession.SessionStart;
+                    objAccessToken.ExpiredOn = userSession.SessionEnd;
+
                 }
-
-                userSession.SessionStart = now;
-                userSession.SessionEnd = now.AddMinutes(CommonConstant.SessionExpired);
-                userSession.Token = token;
-                userSession.RoleID = objAccessToken.RoleID;
-                userSession.SystemUserID = objAccessToken.SystemUserID;
-                userSession.Status = (int)Enums.Status.Active;
-                await _posDbContext.UserSession.AddAsync(userSession);
-                //set return session infomaiton 
-                objAccessToken.IssuedOn = userSession.SessionStart;
-                objAccessToken.ExpiredOn = userSession.SessionEnd;
-
+                await _posDbContext.SaveChangesAsync();
             }
-            await _posDbContext.SaveChangesAsync();
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
+
+            
 
             return objAccessToken;
         }

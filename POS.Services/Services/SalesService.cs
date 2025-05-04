@@ -43,6 +43,8 @@ namespace POS.Services
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
 
+                //var sql = @"";
+
                 lstSales = _posDbContext.VMSales.Where(x => x.BranchID == branchID && x.Status == (int)Enums.Status.Active).ToList();
                 responseMessage.TotalCount = lstSales.Count;
 

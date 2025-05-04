@@ -174,7 +174,7 @@ namespace POS.Services.Services
                     }
                     else
                     {
-                        int maxSequence = await _posDbContext.Permission.MaxAsync(x => x.Sequence);
+                        int maxSequence = await _posDbContext.Permission.MaxAsync(x => (int?)x.Sequence) ?? 0;
                         objPermission.Sequence = maxSequence + 1;
 
                         //objPermission.Status = (int)Enums.Status.Active;

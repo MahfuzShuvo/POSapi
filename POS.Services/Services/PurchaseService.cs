@@ -44,7 +44,50 @@ namespace POS.Services
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
 
-                lstPurchase = await _posDbContext.VMPurchase.Where(x=>x.BranchID == branchID).OrderByDescending(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
+                var sql = @"SELECT
+                            pu.PurchaseCode,
+                            pu.PurchaseDate,
+                            pu.SubTotal,
+                            pu.TotalPurchasePrice,
+                            pu.OtherCharge,
+                            pu.BranchID,
+                            CASE
+                                WHEN pu.DiscountType = 1 THEN 'Percentage (%)'
+                                WHEN pu.DiscountType = 2 THEN 'Fixed'
+                                ELSE 'N/A'
+                            END AS DiscountType,
+                            pu.Discount,
+                            ac.AccountTitle,
+                            ISNULL(pu.PaymentAmount, 0) PaymentAmount,
+							(TotalPurchasePrice - ISNULL(pu.DueAmount, 0)) DueAmount,
+                            ISNULL(pu.PaymentNote, '') AS PaymentNote,
+                            CASE
+                                WHEN pu.PaymentAmount is not null AND pu.PaymentAmount < pu.TotalPurchasePrice THEN 'Partial'
+                                WHEN pu.PaymentAmount is null THEN 'Due'
+                                WHEN pu.PaymentAmount = pu.TotalPurchasePrice THEN 'Paid'
+                                ELSE '-'
+                            END AS PaymentStatus,
+                            CASE
+                                WHEN pu.PurchaseStatus = 1 THEN 'Recieved'
+                                WHEN pu.PurchaseStatus = 2 THEN 'Pending'
+                                WHEN pu.PurchaseStatus = 3 THEN 'Ordered'
+                                ELSE '-'
+                            END AS PurchaseStatus, 
+                            pu.CreatedDate,
+                            ISNULL(sp.SupplierName, '') AS SupplierName,
+                            ISNULL(su.FullName, '') AS CreatedByName
+                        FROM dbo.Purchase AS pu 
+                        LEFT OUTER JOIN dbo.Supplier AS sp ON sp.SupplierID = pu.SupplierID 
+                        LEFT OUTER JOIN dbo.SystemUser AS su ON su.SystemUserID = pu.CreatedBy
+                        LEFT OUTER JOIN dbo.Account AS ac ON ac.AccountID = pu.PaymentType";
+                lstPurchase = await _posDbContext.VMPurchase
+                            .FromSqlRaw(sql)
+                            .Where(x => x.BranchID == branchID)
+                            .OrderByDescending(x => x.CreatedDate)
+                            .Skip(totalSkip)
+                            .Take(requestMessage.PageRecordSize)
+                            .ToListAsync();
+                //lstPurchase = await _posDbContext.VMPurchase.Where(x=>x.BranchID == branchID).OrderByDescending(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToListAsync();
                 responseMessage.TotalCount = lstPurchase.Count;
 
 
@@ -123,8 +166,49 @@ namespace POS.Services
                     responseMessage.Message = "Invalid request";
                     return responseMessage;
                 }
+                var sql = @"SELECT
+                            pu.PurchaseCode,
+                            pu.PurchaseDate,
+                            pu.SubTotal,
+                            pu.TotalPurchasePrice,
+                            pu.OtherCharge,
+                            pu.BranchID,
+                            CASE
+                                WHEN pu.DiscountType = 1 THEN 'Percentage (%)'
+                                WHEN pu.DiscountType = 2 THEN 'Fixed'
+                                ELSE 'N/A'
+                            END AS DiscountType,
+                            pu.Discount,
+                            ac.AccountTitle,
+                            ISNULL(pu.PaymentAmount, 0) PaymentAmount,
+							(TotalPurchasePrice - ISNULL(pu.DueAmount, 0)) DueAmount,
+                            ISNULL(pu.PaymentNote, '') AS PaymentNote,
+                            CASE
+                                WHEN pu.PaymentAmount is not null AND pu.PaymentAmount < pu.TotalPurchasePrice THEN 'Partial'
+                                WHEN pu.PaymentAmount is null THEN 'Due'
+                                WHEN pu.PaymentAmount = pu.TotalPurchasePrice THEN 'Paid'
+                                ELSE '-'
+                            END AS PaymentStatus,
+                            CASE
+                                WHEN pu.PurchaseStatus = 1 THEN 'Recieved'
+                                WHEN pu.PurchaseStatus = 2 THEN 'Pending'
+                                WHEN pu.PurchaseStatus = 3 THEN 'Ordered'
+                                ELSE '-'
+                            END AS PurchaseStatus, 
+                            pu.CreatedDate,
+                            ISNULL(sp.SupplierName, '') AS SupplierName,
+                            ISNULL(su.FullName, '') AS CreatedByName
+                        FROM dbo.Purchase AS pu 
+                        LEFT OUTER JOIN dbo.Supplier AS sp ON sp.SupplierID = pu.SupplierID 
+                        LEFT OUTER JOIN dbo.SystemUser AS su ON su.SystemUserID = pu.CreatedBy
+                        LEFT OUTER JOIN dbo.Account AS ac ON ac.AccountID = pu.PaymentType";
+                lstPurchase = await _posDbContext.VMPurchase
+                            .FromSqlRaw(sql)
+                            .Where(x => x.BranchID == reqExportCSV.BranchID)
+                            .OrderByDescending(x => x.CreatedDate)
+                            .ToListAsync();
 
-                lstPurchase = await _posDbContext.VMPurchase.Where(x => x.BranchID == reqExportCSV.BranchID).OrderByDescending(x => x.CreatedDate).ToListAsync();
+                //lstPurchase = await _posDbContext.VMPurchase.Where(x => x.BranchID == reqExportCSV.BranchID).OrderByDescending(x => x.CreatedDate).ToListAsync();
                 responseMessage.TotalCount = lstPurchase.Count;
 
 

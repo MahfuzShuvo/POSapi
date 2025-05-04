@@ -43,7 +43,13 @@ namespace POS.Services
             {
                 List<VMCountProductByCategory> lstVMCountProductByCategory = new List<VMCountProductByCategory>();
 
-                lstVMCountProductByCategory = await _posDbContext.VMCountProductByCategory.ToListAsync();
+                var sql = @"SELECT c.CategoryID, c.CategoryName, COUNT(p.ProductID) AS ProductCount
+                            FROM Category c 
+                            LEFT JOIN Product p ON c.CategoryID = p.CategoryID
+                            WHERE c.Status = 1
+                            GROUP BY c.CategoryID, c.CategoryName";
+
+                lstVMCountProductByCategory = await _posDbContext.VMCountProductByCategory.FromSqlRaw(sql).ToListAsync();
 
                 responseMessage.ResponseObj = lstVMCountProductByCategory;
                 responseMessage.ResponseCode = (int)Enums.ResponseCode.Success;
@@ -72,7 +78,9 @@ namespace POS.Services
             try
             {
                 List<VMProduct> lstProduct = new List<VMProduct>();
-                int branchID = JsonConvert.DeserializeObject<int>(requestMessage?.RequestObj.ToString());
+                int branchID = requestMessage?.RequestObj != null 
+                    ? JsonConvert.DeserializeObject<int>(requestMessage?.RequestObj?.ToString())
+                    : 0;
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
 
@@ -359,7 +367,7 @@ namespace POS.Services
                         if (!string.IsNullOrEmpty(objProduct.Attachment?.Content))
                         {
                             //remove image from directory
-                            string fileRemovePath = objProduct.Image.Replace(showFilePath, saveFilePath);
+                            string fileRemovePath = objProduct.Image?.Replace(showFilePath, saveFilePath);
 
                             if (!string.IsNullOrEmpty(fileRemovePath))
                             {
