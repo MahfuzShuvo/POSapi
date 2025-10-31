@@ -43,9 +43,40 @@ namespace POS.Services
                 int totalSkip = 0;
                 totalSkip = (requestMessage.PageNumber > 0) ? requestMessage.PageNumber * requestMessage.PageRecordSize : 0;
 
-                //var sql = @"";
+                var sql = @"select 
+                            s.SalesDate,
+                            s.SalesCode,
+                            s.BranchID,
+                            s.SalesStatus,
+                            CASE
+                                WHEN c.CustomerName is null THEN 'Walk-in'
+	                            ELSE c.CustomerName
+                            END AS CustomerName,
+                            s.TotalSalesPrice,
+                            s.PayAmount,
+                            s.DueAmount,
+                            CASE
+                                WHEN s.PayAmount is not null AND s.PayAmount < s.TotalSalesPrice THEN 'Partial'
+                                WHEN s.PayAmount is null OR s.PayAmount = 0 THEN 'Due'
+                                WHEN s.PayAmount = s.TotalSalesPrice THEN 'Paid'
+                                ELSE '-'
+                            END AS PaymentStatus,
+                            u.FullName as CreatedByName,
+                            s.CreatedDate,
+                            a.AccountTitle,
+                            s.Discount,
+                            s.DiscountType,
+                            s.SubTotal,
+                            s.Status
+                            from Sales s
+                            left join SalesProductMapping sp on sp.SalesID=s.SalesID
+                            left join Customer c on c.CustomerID=s.CustomerID
+                            left join SystemUser u on u.SystemUserID=s.CreatedBy
+                            left join Account a on s.AccountID=a.AccountID";
+                lstSales = _posDbContext.VMSales
+                    .FromSqlRaw(sql)
+                    .Where(x => x.BranchID == branchID && x.Status == (int)Enums.Status.Active).ToList();
 
-                lstSales = _posDbContext.VMSales.Where(x => x.BranchID == branchID && x.Status == (int)Enums.Status.Active).ToList();
                 responseMessage.TotalCount = lstSales.Count;
 
                 lstSales = lstSales.OrderByDescending(x => x.CreatedDate).Skip(totalSkip).Take(requestMessage.PageRecordSize).ToList();
